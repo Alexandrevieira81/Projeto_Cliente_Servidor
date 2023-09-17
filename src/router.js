@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { createTableUsuarios, insertUsuarios, selectUsuarios, updateUsuarios, deleteUsuarios, usuarioLogin, usuarioLogout } from './controller/Usuarios.js';
+import { createTableUsuarios,createTableBlacklist, insertUsuarios, selectUsuarios, updateUsuarios, deleteUsuarios, usuarioLogin, usuarioLogout } from './controller/Usuarios.js';
 import {verifyJWT} from "./funcoes.js";
 const router = Router();
 
 
 createTableUsuarios();
+createTableBlacklist();
 router.get('/', (req, res) => {
 
     res.send("Trabalhando com rotas.!")

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import sqlite3 from 'sqlite3';
+import bcrypt from 'bcrypt';
 const SECRET = 'alexvieira';
 
 export async function verifyJWT(req, res, next) {
@@ -44,3 +45,12 @@ export async function verifyJWT(req, res, next) {
     }
   });
 };
+
+export async function criarHash(senha){
+const saltRounds = 6;
+const salt = bcrypt.genSaltSync(saltRounds);
+const result = await bcrypt.hash(senha, salt);
+console.log(result)
+return result;
+
+}

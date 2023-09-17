@@ -1,12 +1,14 @@
 import { openDb } from "../configDB.js";
 import sqlite3 from 'sqlite3';
 import jwt from 'jsonwebtoken';
+import { criarHash } from "../funcoes.js";
+import bcrypt from 'bcrypt';
 const SECRET = 'alexvieira';
 
 export async function createTableUsuarios() {
 
     openDb().then(db => {
-        db.exec('CREATE TABLE IF NOT EXISTS usuario (id INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100), registro VARCHAR(7), email VARCHAR(100), senha VARCHAR(20), tipo_usuario INTEGER)')
+        db.exec('CREATE TABLE IF NOT EXISTS usuario (id INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100), registro VARCHAR(7), email VARCHAR(100), senha VARCHAR(150), tipo_usuario INTEGER)')
     })
 }
 
@@ -39,7 +41,7 @@ export async function usuarioLogin(req, res) {
         console.log(req.body.registro);
         console.log(row);
 
-        if ((row) && (row.senha == (req.body.senha))) {
+        if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))){
 
             console.log(row.registro);
             const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 10000 });
@@ -58,6 +60,8 @@ export async function usuarioLogin(req, res) {
 
 export async function insertUsuarios(req, res) {
     let pessoa = req.body;
+    pessoa.senha = await criarHash(pessoa.senha);
+    
     openDb().then(db => {
         db.run('INSERT INTO usuario (nome, registro, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
     });

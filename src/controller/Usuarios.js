@@ -25,8 +25,10 @@ export async function usuarioLogout(req, res) {
         db.run('INSERT INTO blacklist (token) VALUES (?)', [req.headers['authorization']]);
     });
     res.json({
-        "statusCode": 200,
-        "msg": "Logout Efetuado com Sucesso"
+
+        "success": true,
+        "message": "Logout realizado com sucesso."
+
     })
 
 }
@@ -41,17 +43,26 @@ export async function usuarioLogin(req, res) {
         console.log(req.body.registro);
         console.log(row);
 
-        if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))){
+        if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
 
             console.log(row.registro);
             const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 10000 });
-            res.json({ auth: true, token });
+            res.status(200).json({
+                "success": true,
+                "message": "Login realizado com sucesso.",
+                token
+            });
 
             return;
 
         }
 
-        res.status(401).json({ "msg": "Usuário não Autorizado" });
+        res.status(400).json(
+            {
+                "success": False,
+                "message": "Não foi possível realizar o Login."
+            }
+        );
 
 
     });
@@ -61,34 +72,34 @@ export async function usuarioLogin(req, res) {
 export async function insertUsuarios(req, res) {
     let pessoa = req.body;
     pessoa.senha = await criarHash(pessoa.senha);
-    
+
     openDb().then(db => {
         db.run('INSERT INTO usuario (nome, registro, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
     });
-    res.json({
-        "statusCode": 200,
-        "msg": "Cadastro Efetuado com Sucesso"
+    res.status(200).json({
+        "success": true,
+        "message": "Usuário cadastrado com Sucesso."
     })
 
 }
 
 export async function updateUsuarios(req, res) {
     let pessoa = req.body;
-    if (!pessoa.id) {
-        res.json({
-            "statusCode": 400,
-            "msg": "Informe o Código do Usuário"
+    if (!pessoa.registro) {
+        res.status(400).json({
+            "success": false,
+            "message": "Informe o Código do Usuário"
         })
 
     } else if ((pessoa.nome == null) || (pessoa.email == null) || (pessoa.senha == null) || (pessoa.registro == null) || (!pessoa.tipo_usuario == null)) {
-        res.json({
-            "statusCode": 400,
-            "msg": "Informe o Todos os Campos"
+        res.status(400).json({
+            "success": false,
+            "message": "Informe o Todos os Campos"
         })
     } else if ((pessoa.nome == "") || (pessoa.email == "") || (pessoa.senha == "") || (pessoa.registro == "") || (!pessoa.tipo_usuario == "")) {
-        res.json({
-            "statusCode": 400,
-            "msg": "Informe o Todos os Campos"
+        res.status(400).json({
+            "success": false,
+            "message": "Informe o Todos os Campos"
         })
 
 
@@ -96,11 +107,11 @@ export async function updateUsuarios(req, res) {
 
     else {
         openDb().then(db => {
-            db.run('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE id=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.id]);
+            db.run('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro]);
         });
-        res.json({
-            "statusCode": 200,
-            "msg": "Cadastro Alterado com Sucesso"
+        res.status(200).json({
+            "success": true,
+            "message": "Cadastro Alterado com Sucesso"
         })
 
     }
@@ -110,23 +121,35 @@ export async function updateUsuarios(req, res) {
 export async function selectUsuarios(req, res,) {
     let pessoa = req.body;
 
-    if (!pessoa.id) {
+    if (!pessoa.registro) {
 
-        openDb().then(db => {
-            db.all('SELECT * FROM usuario').then(pessoas => res.json(pessoas));
-        })
+        if (openDb().then(db => {
+            db.all('SELECT nome,registro,email,tipo_usuario FROM usuario').then(pessoas => res.status(200).json(pessoas));
+        })) {
+            console.log('retornou usuários');
+        } else {
+            res.status(200).json({
+                "success": false,
+                "msg": "Ainda não existem usuários cadastrados"
+
+            })
+
+        }
+
 
     } else {
 
         let db = new sqlite3.Database('./database.db');
-        db.get('SELECT * FROM usuario WHERE id=?', [pessoa.id], function (err, row) {
+        db.get('SELECT nome,registro,email,tipo_usuario FROM usuario WHERE registro=?', [pessoa.registro], function (err, row) {
             if (!row) {
 
-                res.status(404).json({ "msg": "Usuário não Encontrado" });
-
+                res.status(400).json({
+                    "success": false,
+                    "msg": "Usuário não Encontrado"
+                });
             }
-            console.log(row);
-            res.json(row);
+
+            res.status(200).json(row);
         });
 
         db.close;
@@ -139,21 +162,21 @@ export async function selectUsuarios(req, res,) {
 
 export async function deleteUsuarios(req, res) {
     let pessoa = req.body;
-    if (!pessoa.id) {
+    if (!pessoa.registro) {
 
-        res.json({
-            "statusCode": 400,
-            "msg": "Informe o Código do Usuário"
+        res.json.status(400)({
+            "success": false,
+            "message": "Informe o Código do Usuário..."
         })
 
     } else {
-        let id = req.body.id;
+        let registro = req.body.registro;
         openDb().then(db => {
-            db.get('DELETE FROM usuario WHERE id=?', [id]);
+            db.get('DELETE FROM usuario WHERE registro=?', [registro]);
         });
-        res.json({
-            "statusCode": 200,
-            "msg": "Usuário Excluído com Sucesso"
+        res.status(200).json({
+            "success": true,
+            "message": "O usuário foi apagado com sucesso."
         })
 
     }

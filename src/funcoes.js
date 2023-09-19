@@ -10,14 +10,22 @@ export async function verificarADM(req, res, next) {
   jwt.verify(token, SECRET, (err, decoded) => {
 
     if (err) {
-      res.status(401).json({ auth: false, message: 'Failed to authenticate token.' });
+      res.status(400).json({
+        "success": false,
+        "message": 'Failed to authenticate token.'
+      });
+
       return;
     } else {
       db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
-        console.log(row);
+
         if (row) {
           db.close;
-          res.status(404).json({ "msg": 'Acesso Expirado, Favor Realizar o Login Novamente!' });
+          res.status(400).json({
+            "success": false,
+            "message": 'Acesso Expirado, Favor Realizar o Login Novamente!'
+
+          });
           return;
         } else {
           let registro = decoded.registro;
@@ -25,7 +33,10 @@ export async function verificarADM(req, res, next) {
           db.get('SELECT * FROM usuario WHERE registro=?', [registro], function (err, row) {
             if (row.tipo_usuario == 1) {
               db.close;
-              res.status(404).json({ "msg": 'Usuário não é Administrador' });
+              res.status(400).json({
+                "success": false,
+                "message": 'Usuário não é Administrador'
+              });
               return;
             } else {
               db.close;
@@ -45,14 +56,20 @@ export async function verificarUSER(req, res, next) {
   jwt.verify(token, SECRET, (err, decoded) => {
 
     if (err) {
-      res.status(401).json({ auth: false, message: 'Failed to authenticate token.' });
+      res.status(400).json({
+        "success": false,
+        "message": 'Failed to authenticate token.'
+      });
       return;
     } else {
       db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
         console.log(row);
         if (row) {
           db.close;
-          res.status(404).json({ "msg": 'Acesso Expirado, Favor Realizar o Login Novamente!' });
+          res.status(400).json({
+            "success": false,
+            "message": 'Acesso Expirado, Favor Realizar o Login Novamente!'
+          });
           return;
         } else {
           db.close;

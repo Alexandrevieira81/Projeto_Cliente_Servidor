@@ -5,11 +5,11 @@ import sqlite3 from 'sqlite3';
 const dbx = await openDb();
 
 export async function createTableRota() {
-    await dbx.exec('CREATE TABLE IF NOT EXISTS rota (idrota INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100),inicio VARCHAR(50),fim VARCHAR(50))');
+    await dbx.exec('CREATE TABLE IF NOT EXISTS rota (idrota INTEGER Primary key AUTOINCREMENT, nome_rota VARCHAR(100),inicio VARCHAR(50),fim VARCHAR(50))');
 };
 
 export async function createTableSegmento() {
-    await dbx.exec('CREATE TABLE IF NOT EXISTS segmento(idsegmento INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100),distancia int, direcao VARCHAR(20),partida VARCHAR(50),chegada VARCHAR(50))');
+    await dbx.exec('CREATE TABLE IF NOT EXISTS segmento(idsegmento INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100),distancia int, direcao VARCHAR(20),partida VARCHAR(50),chegada VARCHAR(50),ordem INTEGER,status BOOL)');
 };
 
 export async function createTableSegmentoRota() {
@@ -23,7 +23,7 @@ export async function insertSegmento(req, res) {
     console.log(segmento);
     try {
 
-        await dbx.get('INSERT INTO segmento(nome, distancia, direcao, partida, chegada) VALUES (?,?,?,?,?)', [segmento.nome, segmento.distancia, segmento.direcao, segmento.partida, segmento.chegada]);
+        await dbx.get('INSERT INTO segmento(nome, distancia, direcao, partida, chegada, ordem, status) VALUES (?,?,?,?,?,?,?)', [segmento.nome, segmento.distancia, segmento.direcao, segmento.partida, segmento.chegada, segmento.ordem, segmento.status]);
         res.status(200).json({
             "success": true,
             "message": "Segmento cadastrado com Sucesso."
@@ -44,7 +44,7 @@ export async function insertRota(req, res) {
     console.log(rota);
 
     try {
-        await dbx.get('INSERT INTO rota (nome, inicio, fim) VALUES (?,?,?)', [rota.nome, rota.inicio, rota.fim]);
+        await dbx.get('INSERT INTO rota (nome_rota, inicio, fim) VALUES (?,?,?)', [rota.nome_rota, rota.inicio, rota.fim]);
         res.status(200).json({
             "success": true,
             "message": "Rota cadastrada com Sucesso."
@@ -84,10 +84,42 @@ export async function insertRotaSegmento(req, res) {
 export async function selectRotas(req, res) {
     let rotas = req.body;
     let db = new sqlite3.Database('./database.db');
+    let rota_filtrada =[];
+    let flag_rota;
+    let flag_status = 0;
+
     try {
 
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
-            res.status(200).json(row);
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
+            flag_rota = row[0].nome_rota;
+
+            row.forEach(function (obj) {
+
+                if (obj.status != 1) {
+                    flag_status = 1;
+
+                } else if ((flag_status == 0) && (flag_rota === obj.nome_rota)) {
+
+                    rota_filtrada.push(obj);
+                    console.log(rota_filtrada.nome_rota + "nome da rota filtrada");
+
+
+                } else if ((flag_rota !== obj.nome_rota) && (flag_status == 0)) {
+
+                   
+
+
+                }else{
+                    flag_status = 0;
+                    flag_rota = obj.nome_rota;
+
+                }
+
+
+            });
+
+            res.status(200).json(rota_filtrada);
+            
 
         });
 

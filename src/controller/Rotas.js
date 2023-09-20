@@ -87,6 +87,7 @@ export async function selectRotas(req, res) {
     let rota_filtrada = [];
     let flag_rota_nome;
     let flag_status = 0;
+    let parar_retorno = 0;
 
     try {
 
@@ -102,7 +103,11 @@ export async function selectRotas(req, res) {
 
                     rota_filtrada.push(obj);
 
+                } else if ((flag_status == 0) && (flag_rota_nome !== obj.nome_rota ) && ( parar_retorno == 0)){
 
+                     res.status(200).json(rota_filtrada);
+                     parar_retorno = 1;
+                     
 
                 } else if ((flag_rota_nome !== obj.nome_rota) && (flag_status == 1)) {
 
@@ -125,7 +130,7 @@ export async function selectRotas(req, res) {
 
             });
 
-            res.status(200).json(rota_filtrada);
+           
 
 
         });

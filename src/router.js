@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { insertUsuarios, selectUsuarios, updateUsuarios, deleteUsuarios, usuarioLogin, usuarioLogout } from './controller/Usuarios.js';
-import { usuariosRotas,insertRota,insertSegmento,insertRotaSegmento,selectRotas} from "./controller/Rotas.js";
+import { usuariosRotas, insertRota, insertSegmento, insertRotaSegmento, selectRotas, selectRotasSemFiltro } from "./controller/Rotas.js";
 import { verificarADM, verificarUSER } from "./funcoes.js";
 const router = Router();
 
@@ -18,10 +18,10 @@ router.put('/usuarios', verificarADM, updateUsuarios);
 router.delete('/usuarios', verificarADM, deleteUsuarios);
 
 //router.get('/rotas', verificarUSER, usuariosRotas);
-router.post('/rotas',insertRota);
-router.get('/rotas',selectRotas);
-router.post('/segmento',insertSegmento);
-router.post('/rotasegmento',insertRotaSegmento);
-
+router.post('/rotas', insertRota);
+router.get('/rotas', selectRotas);
+router.post('/segmento', insertSegmento);
+router.post('/rotasegmento', insertRotaSegmento);
+router.get('/selectRotasSemFiltro', selectRotasSemFiltro);
 
 export default router;

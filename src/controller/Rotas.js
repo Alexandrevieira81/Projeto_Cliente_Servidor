@@ -84,34 +84,41 @@ export async function insertRotaSegmento(req, res) {
 export async function selectRotas(req, res) {
     let rotas = req.body;
     let db = new sqlite3.Database('./database.db');
-    let rota_filtrada =[];
-    let flag_rota;
+    let rota_filtrada = [];
+    let flag_rota_nome;
     let flag_status = 0;
 
     try {
 
         db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
-            flag_rota = row[0].nome_rota;
+            flag_rota_nome = row[0].nome_rota;
 
             row.forEach(function (obj) {
 
                 if (obj.status != 1) {
                     flag_status = 1;
 
-                } else if ((flag_status == 0) && (flag_rota === obj.nome_rota)) {
+                } else if ((flag_status == 0) && (flag_rota_nome === obj.nome_rota)) {
 
                     rota_filtrada.push(obj);
-                    console.log(rota_filtrada.nome_rota + "nome da rota filtrada");
 
 
-                } else if ((flag_rota !== obj.nome_rota) && (flag_status == 0)) {
 
-                   
+                } else if ((flag_rota_nome !== obj.nome_rota) && (flag_status == 1)) {
 
-
-                }else{
+                    flag_rota_nome = obj.nome_rota;
                     flag_status = 0;
-                    flag_rota = obj.nome_rota;
+
+                    var tam = rota_filtrada.length;
+                    while (tam >= 0) {
+                        rota_filtrada.pop();
+                        tam--;
+                    }
+                    rota_filtrada.push(obj);
+
+
+                } else {
+                    console.log("Passando entre as condições até o reset");
 
                 }
 
@@ -119,7 +126,26 @@ export async function selectRotas(req, res) {
             });
 
             res.status(200).json(rota_filtrada);
-            
+
+
+        });
+
+    } catch (error) {
+        res.status(400).json({
+            "success": false,
+            "message": "Não foi Possível Caregar as Rotas."
+        });
+    }
+}
+
+export async function selectRotasSemFiltro(req, res) {
+    let rotas = req.body;
+    let db = new sqlite3.Database('./database.db');
+    try {
+
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
+
+            res.status(200).json(row);
 
         });
 

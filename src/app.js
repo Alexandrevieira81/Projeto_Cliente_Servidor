@@ -1,11 +1,15 @@
 import express from 'express';
 import router from './router.js';
 import { createTableUsuarios, createTableBlacklist } from './controller/Usuarios.js';
+import { createTableRota,createTableSegmento,createTableSegmentoRota } from './controller/Rotas.js';
 const app = express();
 app.use(express.json());
 app.use(router);
 createTableUsuarios();
 createTableBlacklist();
+createTableRota();
+createTableSegmento();
+createTableSegmentoRota();
 app.use(function (err, req, res, next) {
   console.error(err.stack);
   res.status(400).json({

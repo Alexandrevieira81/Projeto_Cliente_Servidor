@@ -31,17 +31,34 @@ export async function verificarADM(req, res, next) {
           let registro = decoded.registro;
           console.log(registro);
           db.get('SELECT * FROM usuario WHERE registro=?', [registro], function (err, row) {
-            if (row.tipo_usuario == 1) {
-              db.close;
-              res.status(400).json({
-                "success": false,
-                "message": 'Usuário não é Administrador'
-              });
-              return;
-            } else {
-              db.close;
-              next();
+
+            try {
+              if (row.tipo_usuario === 1) {
+                
+                db.close;
+                res.status(400).json({
+                  "success": false,
+                  "message": 'Usuário não é Administrador'
+                });
+                return;
+                
+                
+              
+              } else {
+                db.close;
+                next();
+              }
+              
+            } catch (error) {
+             console.log("capturando o erro");
+             res.status(400).json({
+              "success": false,
+              "message": "Não existem usuários com esse número de registro"
+              
+            });
+           
             }
+
           });
         }
       });

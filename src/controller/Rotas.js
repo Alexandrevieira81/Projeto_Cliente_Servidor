@@ -84,8 +84,10 @@ export async function insertRotaSegmento(req, res) {
 export async function selectRotas(req, res) {
     let rotas = req.body;
     let db = new sqlite3.Database('./database.db');
+    let rota = [];
     let rota_filtrada = [];
     let flag_rota_nome;
+    let flag_rota_nomeAux;
     let flag_status = 0;
     let enviado = 0;
 
@@ -94,9 +96,27 @@ export async function selectRotas(req, res) {
 
         db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
             flag_rota_nome = row[0].nome_rota;
+            flag_rota_nomeAux = row[0].nome_rota;
 
             for (let i = 0; i < row.length; i++) {
                 let obj = row[i];
+
+
+                if (flag_rota_nomeAux !== obj.nome_rota) {
+                    var temp = rota.length;
+                    while (temp >= 0) {
+                        rota.pop();
+                        temp--;
+                    }
+                    flag_rota_nomeAux = obj.nome_rota;
+
+
+                }
+                rota.push(obj);
+
+
+
+
 
                 if (obj.status != 1) {
                     flag_status = 1;
@@ -125,10 +145,14 @@ export async function selectRotas(req, res) {
                 }
 
             };
+            console.log(rota_filtrada.length);
+            console.log(rota.length);
 
-            if (enviado == 0) {
+            if ((enviado == 0) && (rota_filtrada.length == rota.length)) {
+                console.log("passou no rota.length");
 
                 res.status(200).json(rota_filtrada);
+                enviado = 1;
 
             } else if (enviado == 0) {
 

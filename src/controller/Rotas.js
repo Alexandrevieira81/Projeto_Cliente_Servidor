@@ -87,14 +87,16 @@ export async function selectRotas(req, res) {
     let rota_filtrada = [];
     let flag_rota_nome;
     let flag_status = 0;
-    let parar_retorno = 0;
+    let enviado = 0;
+
 
     try {
 
         db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
             flag_rota_nome = row[0].nome_rota;
 
-            row.forEach(function (obj) {
+            for (let i = 0; i < row.length; i++) {
+                let obj = row[i];
 
                 if (obj.status != 1) {
                     flag_status = 1;
@@ -103,11 +105,11 @@ export async function selectRotas(req, res) {
 
                     rota_filtrada.push(obj);
 
-                } else if ((flag_status == 0) && (flag_rota_nome !== obj.nome_rota ) && ( parar_retorno == 0)){
+                } else if ((flag_status == 0) && (flag_rota_nome !== obj.nome_rota)) {
 
-                     res.status(200).json(rota_filtrada);
-                     parar_retorno = 1;
-                     
+                    res.status(200).json(rota_filtrada);
+                    enviado = 1;
+                    break;
 
                 } else if ((flag_rota_nome !== obj.nome_rota) && (flag_status == 1)) {
 
@@ -120,19 +122,19 @@ export async function selectRotas(req, res) {
                         tam--;
                     }
                     rota_filtrada.push(obj);
-
-
-                } else {
-                    console.log("Passando entre as condições até o reset");
-
                 }
 
+            };
 
-            });
+            if (enviado == 0) {
 
-           
+                res.status(200).json(rota_filtrada);
 
+            } else if (enviado == 0) {
 
+                res.status(400).json("Sem Rotas disponíveis no momento");
+
+            }
         });
 
     } catch (error) {

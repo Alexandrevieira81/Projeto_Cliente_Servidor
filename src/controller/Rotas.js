@@ -82,7 +82,9 @@ export async function insertRotaSegmento(req, res) {
 }
 
 export async function selectRotas(req, res) {
-    let rotas = req.body;
+    let inicio = req.params?.inicio;
+    let fim = req.params?.fim;
+   
     let db = new sqlite3.Database('./database.db');
     let rota = [];
     let rota_filtrada = [];
@@ -94,7 +96,7 @@ export async function selectRotas(req, res) {
 
     try {
 
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [inicio, fim], function (err, row) {
             flag_rota_nome = row[0].nome_rota;
             flag_rota_nomeAux = row[0].nome_rota;
 
@@ -145,8 +147,8 @@ export async function selectRotas(req, res) {
                 }
 
             };
-            console.log(rota_filtrada.length);
-            console.log(rota.length);
+            //console.log(rota_filtrada.length);
+            //console.log(rota.length);
 
             if ((enviado == 0) && (rota_filtrada.length == rota.length)) {
                 console.log("passou no rota.length");
@@ -170,12 +172,16 @@ export async function selectRotas(req, res) {
 }
 
 export async function selectRotasSemFiltro(req, res) {
-    let rotas = req.body;
+    
+    const inicio = req.params?.inicio;
+    const fim = req.params?.fim;
+   console.log("Passou na rota sem filtro "+inicio);
     let db = new sqlite3.Database('./database.db');
+   
     try {
 
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [rotas.inicio, rotas.fim], function (err, row) {
-
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [inicio, fim], function (err, row) {
+            console.log(row);
             res.status(200).json(row);
 
         });

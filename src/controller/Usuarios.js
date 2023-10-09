@@ -25,13 +25,14 @@ export async function usuarioLogout(req, res) {
     openDb().then(db => {
         db.run('INSERT INTO blacklist (token) VALUES (?)', [req.headers['authorization']]);
     });
-    res.json({
 
+    res.status(200).json({
         "success": true,
-        "message": "Logout realizado com sucesso."
+        "message": "Deslogado com sucesso.",
+        
+    });
 
-    })
-
+    return;
 }
 
 
@@ -42,6 +43,7 @@ export async function usuarioLogin(req, res) {
 
     db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {
         console.log(req.body.registro);
+        console.log(req.body.senha);
         console.log(row);
 
         if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
@@ -81,8 +83,8 @@ export async function insertUsuarios(req, res) {
             "success": true,
             "message": "Usuário cadastrado com Sucesso."
         });
-    
-        
+
+
     } catch (error) {
 
         res.status(400).json({
@@ -90,9 +92,9 @@ export async function insertUsuarios(req, res) {
             "message": "Não foi possível cadastrar o usuário."
         });
 
-        
+
     }
-  
+
 
 }
 

@@ -19,9 +19,9 @@ router.delete('/usuarios', verificarADM, deleteUsuarios);
 
 //router.get('/rotas', verificarUSER, usuariosRotas);
 router.post('/rotas', insertRota);
-router.get('/rotas', selectRotas);
+router.get('/rotas/:inicio/:fim', selectRotas);
 router.post('/segmento', insertSegmento);
 router.post('/rotasegmento', insertRotaSegmento);
-router.get('/selectRotasSemFiltro', selectRotasSemFiltro);
+router.get('/selectRotasSemFiltro/:inicio/:fim', selectRotasSemFiltro);
 
 export default router;

@@ -116,10 +116,6 @@ export async function selectRotas(req, res) {
                 }
                 rota.push(obj);
 
-
-
-
-
                 if (obj.status != 1) {
                     flag_status = 1;
 

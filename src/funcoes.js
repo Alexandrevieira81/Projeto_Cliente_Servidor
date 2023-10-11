@@ -10,9 +10,9 @@ export async function verificarADM(req, res, next) {
   jwt.verify(token, SECRET, (err, decoded) => {
 
     if (err) {
-      res.status(400).json({
+      res.status(401).json({
         "success": false,
-        "message": 'Failed to authenticate token.'
+        "message": 'Usuário não autenticado!'
       });
 
       return;
@@ -21,7 +21,7 @@ export async function verificarADM(req, res, next) {
 
         if (row) {
           db.close;
-          res.status(400).json({
+          res.status(401).json({
             "success": false,
             "message": 'Acesso Expirado, Favor Realizar o Login Novamente!'
 
@@ -34,29 +34,29 @@ export async function verificarADM(req, res, next) {
 
             try {
               if (row.tipo_usuario === 1) {
-                
+
                 db.close;
-                res.status(400).json({
+                res.status(403).json({
                   "success": false,
-                  "message": 'Usuário não é Administrador'
+                  "message": 'Usuário Não Autorizado!'
                 });
                 return;
-                
-                
-              
+
               } else {
-                db.close;
+
                 next();
               }
-              
+
             } catch (error) {
-             console.log("capturando o erro");
-             res.status(400).json({
-              "success": false,
-              "message": "Não existem usuários com esse número de registro"
-              
-            });
-           
+
+              res.status(400).json({
+                "success": false,
+                "message": "Usuário não Cadastrado, Favor Verificar o Número de Registro!"
+
+              });
+
+            } finally {
+              db.close;
             }
 
           });
@@ -70,31 +70,78 @@ export async function verificarUSER(req, res, next) {
   const token = req.headers['authorization'];
   let db = new sqlite3.Database('./database.db');
 
-  jwt.verify(token, SECRET, (err, decoded) => {
+  try {
+    jwt.verify(token, SECRET, (err, decoded) => {
 
-    if (err) {
-      res.status(400).json({
-        "success": false,
-        "message": 'Failed to authenticate token.'
-      });
-      return;
-    } else {
-      db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
-        console.log(row);
-        if (row) {
-          db.close;
-          res.status(400).json({
-            "success": false,
-            "message": 'Acesso Expirado, Favor Realizar o Login Novamente!'
-          });
-          return;
-        } else {
-          db.close;
-          next();
-        }
-      });
-    }
-  });
+      if (err) {
+        res.status(401).json({
+          "success": false,
+          "message": 'Usuário não autenticado!'
+        });
+        return;
+      } else {
+        db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
+          console.log(row);
+          if (row) {
+
+            res.status(401).json({
+              "success": false,
+              "message": 'Usuário não autenticado ou Acesso Expirado, Favor Realizar o Login Novamente!'
+            });
+            return;
+          } else {
+
+            next();
+          }
+        });
+      }
+    });
+
+  } catch (error) {
+
+  } finally {
+    db.close;
+  }
+};
+
+export async function verificarUSERLogout(req, res, next) {
+  const token = req.headers['authorization'];
+  let db = new sqlite3.Database('./database.db');
+  console.log(token);
+
+  try {
+    jwt.verify(token, SECRET, (err, decoded) => {
+      if (err) {
+        res.status(401).json({
+          "success": false,
+          "message": 'Usuário não autenticado'
+        });
+
+      } else {
+        db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
+          console.log(row);
+          if (row) {
+
+            res.status(401).json({
+              "success": false,
+              "message": 'Usuário não autenticado ou Acesso Expirado, Favor Realizar o Login Novamente!'
+            });
+            return;
+          } else {
+
+            next();
+          }
+        });
+      }
+    });
+
+  } catch (error) {
+
+  } finally {
+    db.close;
+  }
+
+
 };
 
 export async function criarHash(senha) {

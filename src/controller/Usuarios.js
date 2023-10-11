@@ -29,7 +29,7 @@ export async function usuarioLogout(req, res) {
     res.status(200).json({
         "success": true,
         "message": "Deslogado com sucesso.",
-        
+
     });
 
     return;
@@ -49,7 +49,7 @@ export async function usuarioLogin(req, res) {
         if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
 
             console.log(row.registro);
-            const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 10000 });
+            const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 120 });
             res.status(200).json({
                 "success": true,
                 "message": "Login realizado com sucesso.",
@@ -60,10 +60,10 @@ export async function usuarioLogin(req, res) {
 
         }
 
-        res.status(400).json(
+        res.status(401).json(
             {
                 "success": false,
-                "message": "Não foi possível realizar o Login."
+                "message": "Não foi possível realizar o Login Verifique suas credenciais."
             }
         );
 
@@ -78,7 +78,7 @@ export async function insertUsuarios(req, res) {
     console.log(pessoa);
 
     try {
-        await dbx.get('INSERT INTO usuario (nome, registro, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
+        await dbx.get('INSERT INTO usuario (registro, nome, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.registro, pessoa.nome, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
         res.status(200).json({
             "success": true,
             "message": "Usuário cadastrado com Sucesso."
@@ -138,38 +138,57 @@ export async function updateUsuarios(req, res) {
 
 }
 
-export async function selectUsuarios(req, res,) {
-    let pessoa = req.body;
+export async function selectAllUser(req, res,) {
 
-    if (!pessoa.registro) {
+    let db = new sqlite3.Database('./database.db');
 
-        (openDb().then(db => {
-            db.all('SELECT nome,registro,email,tipo_usuario FROM usuario').then(pessoas => res.status(200).json(pessoas));
-        }))
-        console.log('retornou usuários');
+    try {
 
+        db.all('SELECT nome,registro,email,tipo_usuario  FROM usuario', function (err, row) {
 
+            let usuarios = JSON.stringify({ usuarios: row, "success": true, "message": "Não precisava de retorno aqui!." });
 
-    } else {
+            res.status(200).json(JSON.parse(usuarios));
 
-        let db = new sqlite3.Database('./database.db');
-        db.get('SELECT nome,registro,email,tipo_usuario FROM usuario WHERE registro=?', [pessoa.registro], function (err, row) {
-            if (!row) {
-
-                res.status(400).json({
-                    "success": false,
-                    "msg": "Usuário não Encontrado"
-                });
-            }
-
-            res.status(200).json(row);
         });
 
+    } catch (error) {
+        res.status(400).json({
+            "success": false,
+            "message": "Não existem usuários cadastrados."
+        });
+    } finally {
         db.close;
-
     }
+}
 
 
+
+export async function selectUser(req, res) {
+
+    let db = new sqlite3.Database('./database.db');
+
+    console.log("Pegou a pessoa no parametro registro ", req.params.registro);
+    try {
+        
+            db.get('SELECT nome,registro,email,tipo_usuario  FROM usuario where registro=?', [req.params.registro], function (err, row) {
+
+                let usuario = JSON.stringify({ usuarios: row, "success": true, "message": "Não precisava de retorno aqui!." });
+
+                console.log(usuario);
+
+                res.status(200).json(JSON.parse(usuario));
+            });
+        
+
+    } catch (error) {
+        res.status(400).json({
+            "success": false,
+            "message": "Não existem usuários cadastrados."
+        });
+    } finally {
+        db.close;
+    }
 }
 
 

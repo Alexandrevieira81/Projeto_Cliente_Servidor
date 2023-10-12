@@ -152,3 +152,6 @@ export async function criarHash(senha) {
   return result;
 
 }
+
+
+

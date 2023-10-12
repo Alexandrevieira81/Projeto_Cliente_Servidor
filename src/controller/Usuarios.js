@@ -42,9 +42,7 @@ export async function usuarioLogin(req, res) {
 
 
     db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {
-        console.log(req.body.registro);
-        console.log(req.body.senha);
-        console.log(row);
+        
 
         if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
 
@@ -74,11 +72,9 @@ export async function usuarioLogin(req, res) {
 
 export async function insertUsuarios(req, res) {
     let pessoa = req.body;
-    console.log(req.body);
-    console.log(pessoa);
+
     pessoa.senha = await criarHash(pessoa.senha);
     
-
     try {
         await dbx.get('INSERT INTO usuario (registro, nome, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.registro, pessoa.nome, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
         res.status(200).json({
@@ -86,20 +82,14 @@ export async function insertUsuarios(req, res) {
             "message": "Usuário cadastrado com Sucesso."
         });
 
-
     } catch (error) {
 
         res.status(400).json({
             "success": false,
             "message": "Não foi possível cadastrar o usuário."
         });
-
-
     }
-
-
 }
-
 
 export async function updateUsuarios(req, res) {
     let pessoa = req.body;
@@ -121,7 +111,6 @@ export async function updateUsuarios(req, res) {
             "success": false,
             "message": "Informe o Todos os Campos vazio"
         })
-
 
     }
 
@@ -169,20 +158,18 @@ export async function selectAllUser(req, res,) {
 export async function selectUser(req, res) {
 
     let db = new sqlite3.Database('./database.db');
-
-    console.log("Pegou a pessoa no parametro registro ", req.params.registro);
+    
     try {
         
-            db.get('SELECT nome,registro,email,tipo_usuario  FROM usuario where registro=?', [req.params.registro], function (err, row) {
-
-                let usuario = JSON.stringify({ usuarios: row, "success": true, "message": "Não precisava de retorno aqui!." });
+            db.get('SELECT nome,registro,email,senha,tipo_usuario  FROM usuario where registro=?', [req.params.registro], function (err, row) {
+            
+                let usuario = JSON.stringify({ usuarios: row, "success": true, "message": "Usuário Encontrado!." });
 
                 console.log(usuario);
 
                 res.status(200).json(JSON.parse(usuario));
             });
         
-
     } catch (error) {
         res.status(400).json({
             "success": false,

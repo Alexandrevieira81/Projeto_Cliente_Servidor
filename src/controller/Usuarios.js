@@ -42,7 +42,7 @@ export async function usuarioLogin(req, res) {
 
 
     db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {
-        
+
 
         if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
 
@@ -74,7 +74,7 @@ export async function insertUsuarios(req, res) {
     let pessoa = req.body;
 
     pessoa.senha = await criarHash(pessoa.senha);
-    
+
     try {
         await dbx.get('INSERT INTO usuario (registro, nome, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.registro, pessoa.nome, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
         res.status(200).json({
@@ -158,18 +158,32 @@ export async function selectAllUser(req, res,) {
 export async function selectUser(req, res) {
 
     let db = new sqlite3.Database('./database.db');
-    
+
     try {
-        
-            db.get('SELECT nome,registro,email,senha,tipo_usuario  FROM usuario where registro=?', [req.params.registro], function (err, row) {
-            
+
+        db.get('SELECT nome,registro,email,tipo_usuario  FROM usuario where registro=?', [req.params.registro], function (err, row) {
+
+            if (row) {
+
                 let usuario = JSON.stringify({ usuarios: row, "success": true, "message": "Usuário Encontrado!." });
 
                 console.log(usuario);
 
                 res.status(200).json(JSON.parse(usuario));
-            });
-        
+
+            } else {
+
+                let usuario = JSON.stringify({ "success": false, "message": "Usuário Não Localizado!." });
+
+
+
+                res.status(401).json(JSON.parse(usuario));
+
+
+            }
+
+        });
+
     } catch (error) {
         res.status(400).json({
             "success": false,
@@ -182,18 +196,26 @@ export async function selectUser(req, res) {
 
 
 export async function deleteUsuarios(req, res) {
-    let pessoa = req.body;
+
+    /*let pessoa = req.body;
     if (!pessoa.registro) {
 
-        res.json.status(400)({
+        res.status(400).json({
+            "success": false,
+            "message": "Informe o Código do Usuário..."
+        })
+*/
+    if (!req.params.registro) {
+
+        res.status(400).json({
             "success": false,
             "message": "Informe o Código do Usuário..."
         })
 
     } else {
-        let registro = req.body.registro;
+        //let registro = req.body.registro;
         openDb().then(db => {
-            db.get('DELETE FROM usuario WHERE registro=?', [registro]);
+            db.get('DELETE FROM usuario WHERE registro=?', [req.params.registro]);
         });
         res.status(200).json({
             "success": true,

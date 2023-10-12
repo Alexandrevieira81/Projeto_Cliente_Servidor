@@ -16,7 +16,7 @@ router.post('/usuarios', verificarADM, insertUsuarios);
 router.get('/usuarios', verificarADM, selectAllUser);
 router.get('/usuarios/:registro', verificarADM, selectUser);
 router.put('/usuarios', verificarADM, updateUsuarios);
-router.delete('/usuarios', verificarADM, deleteUsuarios);
+router.delete('/usuarios/:registro', verificarADM, deleteUsuarios);
 
 //router.get('/rotas', verificarUSER, usuariosRotas);
 router.post('/rota', insertRota);

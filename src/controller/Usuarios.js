@@ -49,7 +49,7 @@ export async function usuarioLogin(req, res) {
         if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
 
             console.log(row.registro);
-            const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 120 });
+            const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 3000 });
             res.status(200).json({
                 "success": true,
                 "message": "Login realizado com sucesso.",
@@ -74,8 +74,10 @@ export async function usuarioLogin(req, res) {
 
 export async function insertUsuarios(req, res) {
     let pessoa = req.body;
-    pessoa.senha = await criarHash(pessoa.senha);
+    console.log(req.body);
     console.log(pessoa);
+    pessoa.senha = await criarHash(pessoa.senha);
+    
 
     try {
         await dbx.get('INSERT INTO usuario (registro, nome, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.registro, pessoa.nome, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);

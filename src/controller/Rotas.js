@@ -82,9 +82,13 @@ export async function insertRotaSegmento(req, res) {
 }
 
 export async function selectRotas(req, res) {
-    let inicio = req.params?.inicio;
-    let fim = req.params?.fim;
-   
+    //let origem = req.params?.origem;
+   // let destino = req.params?.destino;
+
+    let origem = req.body.origem;
+    let destino = req.body.destino;
+
+
     let db = new sqlite3.Database('./database.db');
     let rota = [];
     let rota_filtrada = [];
@@ -96,7 +100,7 @@ export async function selectRotas(req, res) {
 
     try {
 
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [inicio, fim], function (err, row) {
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
             flag_rota_nome = row[0].nome_rota;
             flag_rota_nomeAux = row[0].nome_rota;
 
@@ -125,7 +129,8 @@ export async function selectRotas(req, res) {
 
                 } else if ((flag_status == 0) && (flag_rota_nome !== obj.nome_rota)) {
 
-                    res.status(200).json(rota_filtrada);
+
+                    res.status(200).json({ "success": true, "message": "Rota calculada com sucesso!.", rota: rota_filtrada });
                     enviado = 1;
                     break;
 
@@ -148,13 +153,17 @@ export async function selectRotas(req, res) {
 
             if ((enviado == 0) && (rota_filtrada.length == rota.length)) {
                 console.log("passou no rota.length");
-
-                res.status(200).json(rota_filtrada);
+                //let usuarios = JSON.stringify({ usuarios: row, "success": true, "message": "Não precisava de retorno aqui!." });
+                res.status(200).json({ "success": true, "message": "Rota calculada com sucesso.", rota: rota_filtrada });
+                //res.status(200).json(rota_filtrada);
                 enviado = 1;
 
             } else if (enviado == 0) {
 
-                res.status(400).json("Sem Rotas disponíveis no momento");
+                res.status(400).json({
+                    "success": false,
+                    "message": "Erro ao calcular a rota!"
+                });
 
             }
         });
@@ -162,21 +171,21 @@ export async function selectRotas(req, res) {
     } catch (error) {
         res.status(400).json({
             "success": false,
-            "message": "Não foi Possível Caregar as Rotas."
+            "message": "Erro ao calcular a rota!"
         });
     }
 }
 
 export async function selectRotasSemFiltro(req, res) {
-    
-    const inicio = req.params?.inicio;
-    const fim = req.params?.fim;
-   console.log("Passou na rota sem filtro "+inicio);
+
+    const origem = req.params?.origem;
+    const destino = req.params?.destino;
+    console.log("Passou na rota sem filtro " + origem);
     let db = new sqlite3.Database('./database.db');
-   
+
     try {
 
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [inicio, fim], function (err, row) {
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
             console.log(row);
             res.status(200).json(row);
 

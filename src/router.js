@@ -19,10 +19,10 @@ router.put('/usuarios', verificarADM, updateUsuarios);
 router.delete('/usuarios', verificarADM, deleteUsuarios);
 
 //router.get('/rotas', verificarUSER, usuariosRotas);
-router.post('/rotas', insertRota);
-router.get('/rotas/:inicio/:fim',verificarUSER, selectRotas);
+router.post('/rota', insertRota);
+router.post('/rotas',verificarUSER, selectRotas);
 router.post('/segmento', insertSegmento);
 router.post('/rotasegmento', insertRotaSegmento);
-router.get('/selectRotasSemFiltro/:inicio/:fim', selectRotasSemFiltro);
+router.get('/selectRotasSemFiltro/:origem/:destino', selectRotasSemFiltro);
 
 export default router;

@@ -83,7 +83,7 @@ export async function insertRotaSegmento(req, res) {
 
 export async function selectRotas(req, res) {
     //let origem = req.params?.origem;
-   // let destino = req.params?.destino;
+    // let destino = req.params?.destino;
 
     let origem = req.body.origem;
     let destino = req.body.destino;
@@ -101,8 +101,20 @@ export async function selectRotas(req, res) {
     try {
 
         db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
-            flag_rota_nome = row[0].nome_rota;
-            flag_rota_nomeAux = row[0].nome_rota;
+
+            console.log(row);
+            if (row != "") {
+                flag_rota_nome = row[0].nome_rota;
+                flag_rota_nomeAux = row[0].nome_rota;
+
+            }else{
+                res.status(400).json({
+                    "success": false,
+                    "message": "Informe o ponto de origem da destino da rota!"
+                });
+                return;
+            }
+
 
             for (let i = 0; i < row.length; i++) {
                 let obj = row[i];

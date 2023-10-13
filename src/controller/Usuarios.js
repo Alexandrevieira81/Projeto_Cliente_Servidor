@@ -167,7 +167,7 @@ export async function selectUser(req, res) {
 
                 let usuario = JSON.stringify({ usuarios: row, "success": true, "message": "Usuário Encontrado!." });
 
-                console.log(usuario);
+                //console.log(usuario);
 
                 res.status(200).json(JSON.parse(usuario));
 

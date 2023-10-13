@@ -6,8 +6,20 @@ const SECRET = 'alexvieira';
 export async function verificarADM(req, res, next) {
   const token = req.headers['authorization'];
   let db = new sqlite3.Database('./database.db');
+  let registroaux = "";
 
   jwt.verify(token, SECRET, (err, decoded) => {
+
+    console.log(req.params.registro );
+    console.log(req.body.registro);
+    if (req.params.registro != null) {
+
+      registroaux = req.params.registro;
+
+    } else {
+
+      registroaux = req.body.registro;
+    }
 
     if (err) {
       res.status(401).json({
@@ -29,23 +41,33 @@ export async function verificarADM(req, res, next) {
           return;
         } else {
           let registro = decoded.registro;
-          console.log(registro);
+          
           db.get('SELECT * FROM usuario WHERE registro=?', [registro], function (err, row) {
 
             try {
-              if (row.tipo_usuario === 1) {
 
-                db.close;
-                res.status(403).json({
-                  "success": false,
-                  "message": 'Usuário Não Autorizado!'
-                });
-                return;
+              if (registroaux != row.registro) {
+                if (row.tipo_usuario === 1) {
+
+                  db.close;
+                  res.status(403).json({
+                    "success": false,
+                    "message": 'Usuário Não Autorizado!'
+                  });
+                  return;
+
+                } else {
+
+                  next();
+                }
 
               } else {
 
                 next();
+
+
               }
+
 
             } catch (error) {
 

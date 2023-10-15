@@ -100,7 +100,7 @@ export async function selectRotas(req, res) {
 
     try {
 
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.ponto_inicial,segmento.ponto_final,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
 
             console.log(row);
             if (row != "") {
@@ -197,7 +197,7 @@ export async function selectRotasSemFiltro(req, res) {
 
     try {
 
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.partida,segmento.chegada,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
+        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.ponto_inicial,segmento.ponto_final,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.inicio=? and rota.fim=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
             console.log(row);
             res.status(200).json(row);
 

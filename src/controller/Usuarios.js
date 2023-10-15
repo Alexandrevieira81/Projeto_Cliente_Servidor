@@ -9,7 +9,7 @@ const dbx = await openDb();
 export async function createTableUsuarios() {
 
     openDb().then(db => {
-        db.exec('CREATE TABLE IF NOT EXISTS usuario (id INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100), registro VARCHAR(7) NOT NULL UNIQUE, email VARCHAR(100), senha VARCHAR(150), tipo_usuario INTEGER)')
+        db.exec('CREATE TABLE IF NOT EXISTS usuario (id INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100), registro INTEGER NOT NULL UNIQUE, email VARCHAR(100), senha VARCHAR(150), tipo_usuario INTEGER)')
     })
 }
 
@@ -39,6 +39,9 @@ export async function usuarioLogout(req, res) {
 export async function usuarioLogin(req, res) {
 
     let db = new sqlite3.Database('./database.db');
+
+    console.log(req.body.senha);
+    console.log(req.body.registro);
 
 
     db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {

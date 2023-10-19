@@ -22,8 +22,11 @@ export async function createTableBlacklist() {
 
 export async function usuarioLogout(req, res) {
 
+    console.log("Token bruto ", req.headers['authorization']);
+    console.log("Token split ", req.headers['authorization'].split(' ')[1]);
+
     openDb().then(db => {
-        db.run('INSERT INTO blacklist (token) VALUES (?)', [req.headers['authorization']]);
+        db.run('INSERT INTO blacklist (token) VALUES (?)', [req.headers['authorization'].split(' ')[1]]);
     });
 
     res.status(200).json({
@@ -61,12 +64,10 @@ export async function usuarioLogin(req, res) {
 
         }
 
-        res.status(401).json(
-            {
+        res.status(401).json({
                 "success": false,
                 "message": "Não foi possível realizar o Login Verifique suas credenciais."
-            }
-        );
+            });
 
 
     });

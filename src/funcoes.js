@@ -4,13 +4,13 @@ import bcrypt from 'bcrypt';
 const SECRET = 'alexvieira';
 
 export async function verificarADM(req, res, next) {
-  const token = req.headers['authorization'];
+  const token = req.headers['authorization'].split(' ')[1];
   let db = new sqlite3.Database('./database.db');
   let registroaux = "";
 
   jwt.verify(token, SECRET, (err, decoded) => {
 
-    console.log(req.params.registro );
+    console.log(req.params.registro);
     console.log(req.body.registro);
     if (req.params.registro != null) {
 
@@ -41,7 +41,7 @@ export async function verificarADM(req, res, next) {
           return;
         } else {
           let registro = decoded.registro;
-          
+
           db.get('SELECT * FROM usuario WHERE registro=?', [registro], function (err, row) {
 
             try {
@@ -89,8 +89,11 @@ export async function verificarADM(req, res, next) {
 };
 
 export async function verificarUSER(req, res, next) {
-  const token = req.headers['authorization'];
+  const token = req.headers['authorization'].split(' ')[1];
   let db = new sqlite3.Database('./database.db');
+
+
+
 
   try {
     jwt.verify(token, SECRET, (err, decoded) => {
@@ -127,7 +130,7 @@ export async function verificarUSER(req, res, next) {
 };
 
 export async function verificarUSERLogout(req, res, next) {
-  const token = req.headers['authorization'];
+  const token = req.headers['authorization'].split(' ')[1];
   let db = new sqlite3.Database('./database.db');
   console.log(token);
 

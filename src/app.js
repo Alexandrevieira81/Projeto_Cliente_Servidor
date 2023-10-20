@@ -2,7 +2,7 @@ import express from 'express';
 import router from './router.js';
 import cors from 'cors';
 import { createTableUsuarios, createTableBlacklist } from './controller/Usuarios.js';
-import { createTableRota,createTableSegmento,createTableSegmentoRota } from './controller/Rotas.js';
+import { createTableRota,createTableSegmento,createTableSegmentoRota,createTableSegmentos,createTablePontos } from './controller/Rotas.js';
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -12,6 +12,8 @@ createTableBlacklist();
 createTableRota();
 createTableSegmento();
 createTableSegmentoRota();
+createTablePontos();
+createTableSegmentos();
 app.use(function (err, req, res, next) {
   console.error(err.stack);
   res.status(400).json({

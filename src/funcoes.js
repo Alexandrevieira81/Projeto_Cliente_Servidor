@@ -91,6 +91,8 @@ export async function verificarADM(req, res, next) {
 export async function verificarUSER(req, res, next) {
   const token = req.headers['authorization'].split(' ')[1];
   let db = new sqlite3.Database('./database.db');
+  console.log("Passou pelo verifica user");
+ console.log(token);
 
 
 

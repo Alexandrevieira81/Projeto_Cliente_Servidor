@@ -1,28 +1,7 @@
 import { openDb } from "../configDB.js";
 import sqlite3 from 'sqlite3';
 
-
 const dbx = await openDb();
-
-
-
-export async function createTablePontos() {
-    await dbx.exec('CREATE TABLE IF NOT EXISTS pontos (id INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100) NOT NULL UNIQUE)');
-};
-
-
-export async function createTableSegmentos() {
-    await dbx.exec('PRAGMA foreign_keys = 1;CREATE TABLE IF NOT EXISTS segmentos(id INTEGER Primary key AUTOINCREMENT,distancia REAL, ponto_inicial int,ponto_final int,direcao VARCHAR(20),status BOOL,FOREIGN KEY(ponto_inicial) REFERENCES pontos(id),FOREIGN KEY(ponto_final) REFERENCES pontos(id) ON DELETE CASCADE)');
-};
-
-
-
-
-
-
-
-
-
 
 export async function createTableRota() {
     await dbx.exec('CREATE TABLE IF NOT EXISTS rota (idrota INTEGER Primary key AUTOINCREMENT, nome_rota VARCHAR(100),origem VARCHAR(50),destino VARCHAR(50))');
@@ -38,46 +17,7 @@ export async function createTableSegmentoRota() {
     await dbx.exec('PRAGMA foreign_keys = 1; CREATE TABLE IF NOT EXISTS rotasegmento (id_rota INTEGER , id_segmento INTEGER, FOREIGN KEY(id_rota) REFERENCES rota(idrota),FOREIGN KEY(id_segmento) REFERENCES segmento(idsegmento),PRIMARY KEY(id_rota,id_segmento))');
 
 };
-export async function insertSegmentos(req, res) {
-    let segmento = req.body;
-    console.log(segmento);
-    try {
 
-        await dbx.get('INSERT INTO segmentos(distancia, direcao, ponto_inicial, ponto_final,status) VALUES (?,?,?,?,?)', [segmento.distancia, segmento.direcao, segmento.ponto_inicial, segmento.ponto_final, segmento.status]);
-        res.status(200).json({
-            "success": true,
-            "message": "Segmento cadastrado com Sucesso."
-        });
-
-    } catch (error) {
-
-        res.status(400).json({
-            "success": false,
-            "message": "Não foi possível cadastrar o Segmento."
-        });
-    }
-
-}
-export async function insertPonto(req, res) {
-    let ponto = req.body;
-    console.log(ponto.nome);
-    try {
-
-        await dbx.get('INSERT INTO pontos(nome) VALUES (?)', [ponto.nome]);
-        res.status(200).json({
-            "success": true,
-            "message": "Ponto cadastrado com Sucesso."
-        });
-
-    } catch (error) {
-
-        res.status(400).json({
-            "success": false,
-            "message": "Não foi possível cadastrar o Ponto."
-        });
-    }
-
-}
 export async function insertSegmento(req, res) {
     let segmento = req.body;
     console.log(segmento);
@@ -98,7 +38,6 @@ export async function insertSegmento(req, res) {
     }
 
 }
-
 
 export async function insertRota(req, res) {
     let rota = req.body;
@@ -259,49 +198,7 @@ export async function selectRotas(req, res) {
     }
 }
 
-export async function selectRotasSemFiltro(req, res) {
 
-    const origem = req.params?.origem;
-    const destino = req.params?.destino;
-    console.log("Passou na rota sem filtro " + origem);
-    let db = new sqlite3.Database('./database.db');
-
-    try {
-
-        db.all('SELECT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.ponto_inicial,segmento.ponto_final,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rota.origem=? and rota.destino=? and rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento', [origem, destino], function (err, row) {
-            console.log(row);
-            res.status(200).json(row);
-
-        });
-
-    } catch (error) {
-        res.status(400).json({
-            "success": false,
-            "message": "Não foi Possível Caregar as Rotas."
-        });
-    }
-}
-
-export async function selectAllRotas(req, res) {
-
-
-    let db = new sqlite3.Database('./database.db');
-
-    try {
-
-        db.all('SELECT DISTINCT rota.nome_rota,segmento.nome,segmento.distancia,segmento.direcao,segmento.ponto_inicial,segmento.ponto_final,segmento.ordem,segmento.status FROM rota,segmento,rotasegmento where rotasegmento.id_rota = rota.idrota and segmento.idsegmento = rotasegmento.id_segmento ORDER BY rota.nome_rota', function (err, row) {
-            console.log(row);
-            res.status(200).json(row);
-
-        });
-
-    } catch (error) {
-        res.status(400).json({
-            "success": false,
-            "message": "Não foi Possível Caregar as Rotas."
-        });
-    }
-}
 
 export async function selectAllSegmentos(req, res) {
 
@@ -325,10 +222,3 @@ export async function selectAllSegmentos(req, res) {
 }
 
 
-export async function usuariosRotas(req, res) {
-
-    res.status(200).json({
-        "success": true,
-        "message": "Usuário Comum acesando as rotas..."
-    })
-}

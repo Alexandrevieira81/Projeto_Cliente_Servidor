@@ -8,32 +8,38 @@ const dbx = await openDb();
 
 export async function createTableUsuarios() {
 
-    openDb().then(db => {
-        db.exec('CREATE TABLE IF NOT EXISTS usuario (id INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100), registro INTEGER NOT NULL UNIQUE, email VARCHAR(100), senha VARCHAR(150), tipo_usuario INTEGER)')
-    })
+    await dbx.exec('CREATE TABLE IF NOT EXISTS pontos (id INTEGER Primary key AUTOINCREMENT, nome VARCHAR(100) NOT NULL UNIQUE)');
+
 }
 
 export async function createTableBlacklist() {
 
-    openDb().then(db => {
-        db.exec('CREATE TABLE IF NOT EXISTS blacklist (id INTEGER Primary key AUTOINCREMENT, token TTL)')
-    })
+    await dbx.exec('CREATE TABLE IF NOT EXISTS blacklist (id INTEGER Primary key AUTOINCREMENT, token TTL)')
+
 }
 
 export async function usuarioLogout(req, res) {
 
-    console.log("Token bruto ", req.headers['authorization']);
-    console.log("Token split ", req.headers['authorization'].split(' ')[1]);
+    try {
 
-    openDb().then(db => {
-        db.run('INSERT INTO blacklist (token) VALUES (?)', [req.headers['authorization'].split(' ')[1]]);
-    });
+        await dbx.run('INSERT INTO blacklist (token) VALUES (?)', [req.headers['authorization'].split(' ')[1]]);
 
-    res.status(200).json({
-        "success": true,
-        "message": "Deslogado com sucesso.",
+        res.status(200).json({
+            "success": true,
+            "message": "Deslogado com sucesso.",
 
-    });
+        });
+
+    } catch (error) {
+
+        res.status(400).json({
+            "success": true,
+            "message": "Problemas ao Deslogar",
+
+        });
+
+    }
+
 
     return;
 }
@@ -65,9 +71,9 @@ export async function usuarioLogin(req, res) {
         }
 
         res.status(401).json({
-                "success": false,
-                "message": "Não foi possível realizar o Login Verifique suas credenciais."
-            });
+            "success": false,
+            "message": "Não foi possível realizar o Login Verifique suas credenciais."
+        });
 
 
     });
@@ -76,6 +82,7 @@ export async function usuarioLogin(req, res) {
 
 export async function insertUsuarios(req, res) {
     let pessoa = req.body;
+    console.log(pessoa);
 
     pessoa.senha = await criarHash(pessoa.senha);
 
@@ -97,10 +104,13 @@ export async function insertUsuarios(req, res) {
 
 export async function updateUsuarios(req, res) {
     let pessoa = req.body;
+    console.log(" entrou no update ", pessoa);
+    let db = new sqlite3.Database('./database.db');
+
     if (!pessoa.registro) {
         res.status(400).json({
             "success": false,
-            "message": "Informe o Código do Usuário"
+            "message": "Informe o Código do Usuário1111"
         })
 
     } else if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (!pessoa.tipo_usuario === null)) {
@@ -116,21 +126,18 @@ export async function updateUsuarios(req, res) {
             "message": "Informe o Todos os Campos vazio"
         })
 
-    }
-
-    else {
+    } else {
         pessoa.senha = await criarHash(pessoa.senha);
-        openDb().then(db => {
-            db.run('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro]);
+        console.log("chegou na sql");
+
+        db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro], function (err, row) {
+            res.status(200).json({
+                "success": true,
+                "message": "Cadastro Alterado com Sucesso"
+            })
         });
 
-        res.status(200).json({
-            "success": true,
-            "message": "Cadastro Alterado com Sucesso"
-        })
-
     }
-
 }
 
 export async function selectAllUser(req, res,) {
@@ -157,8 +164,6 @@ export async function selectAllUser(req, res,) {
     }
 }
 
-
-
 export async function selectUser(req, res) {
 
     let db = new sqlite3.Database('./database.db');
@@ -179,10 +184,7 @@ export async function selectUser(req, res) {
 
                 let usuario = JSON.stringify({ "success": false, "message": "Usuário Não Localizado!." });
 
-
-
                 res.status(401).json(JSON.parse(usuario));
-
 
             }
 
@@ -201,30 +203,38 @@ export async function selectUser(req, res) {
 
 export async function deleteUsuarios(req, res) {
 
-    /*let pessoa = req.body;
-    if (!pessoa.registro) {
+    let db = new sqlite3.Database('./database.db');
+    console.log("DELETAR USUÁRIO ", req.params.registro)
+    try {
+
+        if (!req.params.registro) {
+
+            res.status(400).json({
+                "success": false,
+                "message": "Informe o Código do Usuário..."
+            })
+
+        } else {
+
+            db.get('DELETE FROM usuario WHERE registro=?', [req.params.registro], function (err, row) {
+                res.status(200).json({
+                    "success": true,
+                    "message": "O Usuário foi apagado com sucesso."
+                })
+
+            });
+        }
+
+    } catch (error) {
 
         res.status(400).json({
             "success": false,
-            "message": "Informe o Código do Usuário..."
-        })
-*/
-    if (!req.params.registro) {
-
-        res.status(400).json({
-            "success": false,
-            "message": "Informe o Código do Usuário..."
+            "message": "Usuário Inexistente..."
         })
 
-    } else {
-        //let registro = req.body.registro;
-        openDb().then(db => {
-            db.get('DELETE FROM usuario WHERE registro=?', [req.params.registro]);
-        });
-        res.status(200).json({
-            "success": true,
-            "message": "O usuário foi apagado com sucesso."
-        })
+    } finally {
 
+        db.close;
     }
+
 }

@@ -4,95 +4,112 @@ import bcrypt from 'bcrypt';
 const SECRET = 'alexvieira';
 
 export async function verificarADM(req, res, next) {
-  const token = req.headers['authorization'].split(' ')[1];
+
   let db = new sqlite3.Database('./database.db');
   let registroaux = "";
+  try {
 
-  jwt.verify(token, SECRET, (err, decoded) => {
+    const token = req.headers['authorization'].split(' ')[1];
 
-    console.log(req.params.registro);
-    console.log(req.body.registro);
-    if (req.params.registro != null) {
 
-      registroaux = req.params.registro;
+    jwt.verify(token, SECRET, (err, decoded) => {
 
-    } else {
+      console.log(req.params.registro);
+      console.log(req.body.registro);
+      if (req.params.registro != null) {
 
-      registroaux = req.body.registro;
-    }
+        registroaux = req.params.registro;
 
-    if (err) {
-      res.status(401).json({
-        "success": false,
-        "message": 'Usuário não autenticado!'
-      });
+      } else {
 
-      return;
-    } else {
-      db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
+        registroaux = req.body.registro;
+      }
 
-        if (row) {
-          db.close;
-          res.status(401).json({
-            "success": false,
-            "message": 'Acesso Expirado, Favor Realizar o Login Novamente!'
+      if (err) {
+        res.status(401).json({
+          "success": false,
+          "message": 'Usuário não autenticado!'
+        });
 
-          });
-          return;
-        } else {
-          let registro = decoded.registro;
+        return;
+      } else {
+        db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
 
-          db.get('SELECT * FROM usuario WHERE registro=?', [registro], function (err, row) {
+          if (row) {
+            db.close;
+            res.status(401).json({
+              "success": false,
+              "message": 'Acesso Expirado, Favor Realizar o Login Novamente!'
 
-            try {
+            });
+            return;
+          } else {
+            let registro = decoded.registro;
 
-              if (registroaux != row.registro) {
-                if (row.tipo_usuario === 1) {
+            db.get('SELECT * FROM usuario WHERE registro=?', [registro], function (err, row) {
 
-                  db.close;
-                  res.status(403).json({
-                    "success": false,
-                    "message": 'Usuário Não Autorizado!'
-                  });
-                  return;
+              try {
+
+                if (registroaux != row.registro) {
+                  if (row.tipo_usuario === 1) {
+
+                    db.close;
+                    res.status(403).json({
+                      "success": false,
+                      "message": 'Usuário Não Autorizado!'
+                    });
+                    return;
+
+                  } else {
+
+                    next();
+                  }
 
                 } else {
 
                   next();
+
+
                 }
 
-              } else {
 
-                next();
+              } catch (error) {
 
+                res.status(400).json({
+                  "success": false,
+                  "message": "Usuário não Cadastrado, Favor Verificar o Número de Registro!"
 
+                });
+
+              } finally {
+                db.close;
               }
 
+            });
+          }
+        });
+      }
+    });
 
-            } catch (error) {
+  } catch (error) {
+    res.status(400).json({
+      "success": false,
+      "message": "Erro no formato do cabeçalho!"
 
-              res.status(400).json({
-                "success": false,
-                "message": "Usuário não Cadastrado, Favor Verificar o Número de Registro!"
+    });
 
-              });
+  } finally {
+    db.close;
 
-            } finally {
-              db.close;
-            }
+  }
 
-          });
-        }
-      });
-    }
-  });
 };
 
 export async function verificarUSER(req, res, next) {
   const token = req.headers['authorization'].split(' ')[1];
   let db = new sqlite3.Database('./database.db');
   console.log("Passou pelo verifica user");
- console.log(token);
+  console.log(token);
 
 
 

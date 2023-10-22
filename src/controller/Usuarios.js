@@ -84,9 +84,11 @@ export async function insertUsuarios(req, res) {
     let pessoa = req.body;
     console.log(pessoa);
 
-    pessoa.senha = await criarHash(pessoa.senha);
+    
 
     try {
+
+        pessoa.senha = await criarHash(pessoa.senha);
         await dbx.get('INSERT INTO usuario (registro, nome, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.registro, pessoa.nome, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
         res.status(200).json({
             "success": true,

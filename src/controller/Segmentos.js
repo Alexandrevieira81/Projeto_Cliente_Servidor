@@ -50,7 +50,7 @@ export async function selectSegmentos(req, res) {
 }
 
 export async function updateSegmentos(req, res) {
-    let segmento = req.body.data;
+    let segmento = req.body;
     console.log(segmento);
     let db = new sqlite3.Database('./database.db');
     try {

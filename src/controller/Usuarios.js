@@ -123,67 +123,70 @@ export async function insertUsuarios(req, res) {
 
 export async function updateUsuarios(req, res) {
     let pessoa = req.body;
-    console.log(" entrou no update ", pessoa);
+    let erros = await verificarCadastro(pessoa);
     let db = new sqlite3.Database('./database.db');
 
     try {
         const token = req.headers['authorization'].split(' ')[1];
 
-        if (!pessoa.registro) {
-            res.status(403).json({
-                "success": false,
-                "message": "Informe o Código do Usuário"
-            })
+        if (erros.length == 0) {
+            
+            pessoa.senha = await criarHash(pessoa.senha);
 
-        } else if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (pessoa.tipo_usuario === null)) {
-            res.status(403).json({
-                "success": false,
-                "message": "Informe o Todos os Campos"
-            })
+            db.get('SELECT * FROM usuario WHERE registro=?', pessoa.registro, function (err, row) {
 
-        } else if ((pessoa.nome === "") || (pessoa.email === "") || (pessoa.senha === "") || (pessoa.registro === "") || (pessoa.tipo_usuario === "")) {
-            console.log(pessoa);
-            res.status(403).json({
-                "success": false,
-                "message": "Não Podem Existir Campos Vazios"
-            })
-        } else if ((pessoa.nome === " ") || (pessoa.email === " ") || (pessoa.senha === " ") || (pessoa.registro === " ") || (pessoa.tipo_usuario === " ")) {
-            console.log(pessoa);
-            res.status(403).json({
-                "success": false,
-                "message": "Não Podem Existir Campos Vazios"
-            })
+                if (row) {
+
+
+                    console.log("chegou na sql");
+
+                    jwt.verify(token, SECRET, (err, decoded) => {
+                        db.get('SELECT * FROM usuario WHERE registro=?', decoded.registro, function (err, row) {
+
+                            if (row.tipo_usuario === 1) {
+                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro], function (err, row) {
+                                    res.status(200).json({
+                                        "success": true,
+                                        "message": "Cadastro Alterado com Sucesso"
+                                    })
+                                });
+                            } else if ((pessoa.tipo_usuario === 1) && (row.tipo_usuario === 0)) {
+                                res.status(403).json({
+                                    "success": true,
+                                    "message": "Você Não Tem Autorização para Mudar Seu Status"
+                                })
+                            } else {
+                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.registro], function (err, row) {
+                                    res.status(200).json({
+                                        "success": true,
+                                        "message": "Cadastro Alterado com Sucesso"
+                                    })
+                                });
+
+                            }
+                        });
+                    });
+
+
+
+                } else {
+                    res.status(403).json({
+                        "success": false,
+                        "message": "Informe um Registro Válido!"
+
+                    });
+
+                }
+
+
+            });
 
         } else {
-            pessoa.senha = await criarHash(pessoa.senha);
-            console.log("chegou na sql");
-
-            jwt.verify(token, SECRET, (err, decoded) => {
-                db.get('SELECT * FROM usuario WHERE registro=?', decoded.registro, function (err, row) {
-
-                    if (row.tipo_usuario === 1) {
-                        db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro], function (err, row) {
-                            res.status(200).json({
-                                "success": true,
-                                "message": "Cadastro Alterado com Sucesso"
-                            })
-                        });
-                    } else if ((pessoa.tipo_usuario === 1) && (row.tipo_usuario === 0)) {
-                        res.status(403).json({
-                            "success": true,
-                            "message": "Você Não Tem Autorização para Mudar Seu Status"
-                        })
-                    } else {
-                        db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.registro], function (err, row) {
-                            res.status(200).json({
-                                "success": true,
-                                "message": "Cadastro Alterado com Sucesso"
-                            })
-                        });
-
-                    }
-                });
+            res.status(403).json({
+                "success": false,
+                "message": erros
             });
+
         }
 
     } catch (error) {

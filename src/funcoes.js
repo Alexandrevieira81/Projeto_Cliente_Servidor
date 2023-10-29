@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
+import * as EmailValidator from 'email-validator';
 const SECRET = 'alexvieira';
 
 export async function verificarADM(req, res, next) {
@@ -193,39 +194,55 @@ export async function criarHash(senha) {
 export async function verificarCadastro(pessoa) {
   let erros = [];
 
-  console.log("Verifica campos ", pessoa);
-  console.log(pessoa.registro.length);
+  try {
+    console.log("Verifica campos ", pessoa);
+    let registro = String(pessoa.registro);
+    console.log(registro);
 
-  if (pessoa.registro == "") {
-    erros.push("Informe o Código do Usuário");
+    if (pessoa.registro == "") {
+      erros.push("Informe o Código do Usuário");
+
+    }
+    if (isNaN(pessoa.registro)) {
+      erros.push("O Registro Aceita Apenas Números");
+
+
+    }
+    if ((registro.length) != 7) {
+      erros.push("O registro Precisa conter 7 números");
+
+
+    }
+    if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (pessoa.tipo_usuario === null)) {
+      erros.push("Informe o Todos os Campos");
+
+
+    }
+    if (!(EmailValidator.validate(pessoa.email))) {
+      erros.push("Email inválido");
+
+    }
+    if ((pessoa.nome === "") || (pessoa.email === "") || (pessoa.senha === "") || (pessoa.registro === "") || (pessoa.tipo_usuario === "")) {
+      erros.push("Não Podem Existir Campos Vazios");
+
+
+    }
+    if ((pessoa.nome === " ") || (pessoa.email === " ") || (pessoa.senha === " ") || (pessoa.registro === " ") || (pessoa.tipo_usuario === " ")) {
+      erros.push("Não Podem Existir Campos Vazios");
+
+
+    }
+
+
+  } catch (error) {
+    erros.push("Quebra de protocolo");
+    console.log("Quebra de protocolo")
+
+  } finally {
+    return erros;
 
   }
-  if (isNaN(pessoa.registro)) {
-    erros.push("O Registro Aceita Apenas Números");
 
-
-  }
-  if ((pessoa.registro.length) != 7) {
-    erros.push("O registro Precisa conter 7 números");
-
-
-  }
-  if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (pessoa.tipo_usuario === null)) {
-    erros.push("Informe o Todos os Campos");
-
-
-  }
-  if ((pessoa.nome === "") || (pessoa.email === "") || (pessoa.senha === "") || (pessoa.registro === "") || (pessoa.tipo_usuario === "")) {
-    erros.push("Não Podem Existir Campos Vazios");
-
-
-  }
-  if ((pessoa.nome === " ") || (pessoa.email === " ") || (pessoa.senha === " ") || (pessoa.registro === " ") || (pessoa.tipo_usuario === " ")) {
-    erros.push("Não Podem Existir Campos Vazios");
-
-
-  }
-  return erros;
 }
 
 

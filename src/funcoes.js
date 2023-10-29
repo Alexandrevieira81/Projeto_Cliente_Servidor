@@ -8,14 +8,10 @@ export async function verificarADM(req, res, next) {
   let db = new sqlite3.Database('./database.db');
   let registroaux = "";
   try {
-
     const token = req.headers['authorization'].split(' ')[1];
-
-
     jwt.verify(token, SECRET, (err, decoded) => {
 
-      console.log(req.params.registro);
-      console.log(req.body.registro);
+
       if (req.params.registro != null) {
 
         registroaux = req.params.registro;
@@ -51,7 +47,7 @@ export async function verificarADM(req, res, next) {
               try {
 
                 if (registroaux != row.registro) {
-                  if (row.tipo_usuario === 1) {
+                  if (row.tipo_usuario === 0) {
 
                     db.close;
                     res.status(403).json({
@@ -68,23 +64,16 @@ export async function verificarADM(req, res, next) {
                 } else {
 
                   next();
-
-
                 }
-
-
               } catch (error) {
 
-                res.status(400).json({
+                res.status(403).json({
                   "success": false,
                   "message": "Usuário não Cadastrado, Favor Verificar o Número de Registro!"
 
                 });
 
-              } finally {
-                db.close;
               }
-
             });
           }
         });
@@ -92,7 +81,7 @@ export async function verificarADM(req, res, next) {
     });
 
   } catch (error) {
-    res.status(400).json({
+    res.status(403).json({
       "success": false,
       "message": "Erro no formato do cabeçalho!"
 
@@ -110,10 +99,6 @@ export async function verificarUSER(req, res, next) {
   let db = new sqlite3.Database('./database.db');
   console.log("Passou pelo verifica user");
   console.log(token);
-
-
-
-
   try {
     jwt.verify(token, SECRET, (err, decoded) => {
 
@@ -142,7 +127,11 @@ export async function verificarUSER(req, res, next) {
     });
 
   } catch (error) {
+    res.status(403).json({
+      "success": false,
+      "message": "Erro no formato do cabeçalho!"
 
+    });
   } finally {
     db.close;
   }
@@ -180,11 +169,14 @@ export async function verificarUSERLogout(req, res, next) {
     });
 
   } catch (error) {
+    res.status(403).json({
+      "success": false,
+      "message": "Erro no formato do cabeçalho!"
 
+    });
   } finally {
     db.close;
   }
-
 
 };
 
@@ -195,6 +187,45 @@ export async function criarHash(senha) {
   console.log(result)
   return result;
 
+}
+
+
+export async function verificarCadastro(pessoa) {
+  let erros = [];
+
+  console.log("Verifica campos ", pessoa);
+  console.log(pessoa.registro.length);
+
+  if (pessoa.registro == "") {
+    erros.push("Informe o Código do Usuário");
+
+  }
+  if (isNaN(pessoa.registro)) {
+    erros.push("O Registro Aceita Apenas Números");
+
+
+  }
+  if ((pessoa.registro.length) != 7) {
+    erros.push("O registro Precisa conter 7 números");
+
+
+  }
+  if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (pessoa.tipo_usuario === null)) {
+    erros.push("Informe o Todos os Campos");
+
+
+  }
+  if ((pessoa.nome === "") || (pessoa.email === "") || (pessoa.senha === "") || (pessoa.registro === "") || (pessoa.tipo_usuario === "")) {
+    erros.push("Não Podem Existir Campos Vazios");
+
+
+  }
+  if ((pessoa.nome === " ") || (pessoa.email === " ") || (pessoa.senha === " ") || (pessoa.registro === " ") || (pessoa.tipo_usuario === " ")) {
+    erros.push("Não Podem Existir Campos Vazios");
+
+
+  }
+  return erros;
 }
 
 

@@ -1,7 +1,7 @@
 import { openDb } from "../configDB.js";
 import sqlite3 from 'sqlite3';
 import jwt from 'jsonwebtoken';
-import { criarHash } from "../funcoes.js";
+import { criarHash, verificarCadastro } from "../funcoes.js";
 import bcrypt from 'bcrypt';
 const SECRET = 'alexvieira';
 const dbx = await openDb();
@@ -32,7 +32,7 @@ export async function usuarioLogout(req, res) {
 
     } catch (error) {
 
-        res.status(400).json({
+        res.status(403).json({
             "success": true,
             "message": "Problemas ao Deslogar",
 
@@ -52,52 +52,69 @@ export async function usuarioLogin(req, res) {
     console.log(req.body.senha);
     console.log(req.body.registro);
 
+    try {
+        db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {
 
-    db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {
+            if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
+                console.log(row.registro);
+                const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 3000 });
+                res.status(200).json({
+                    "success": true,
+                    "message": "Login realizado com sucesso.",
+                    token
+                });
+            } else {
+                res.status(403).json({
+                    "success": false,
+                    "message": "Não foi possível realizar o Login Verifique suas credenciais."
+                });
 
+            }
 
-        if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
+        });
+    } catch (error) {
 
-            console.log(row.registro);
-            const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 3000 });
-            res.status(200).json({
-                "success": true,
-                "message": "Login realizado com sucesso.",
-                token
-            });
-
-            return;
-
-        }
-
-        res.status(401).json({
+        res.status(403).json({
             "success": false,
             "message": "Não foi possível realizar o Login Verifique suas credenciais."
         });
 
+    } finally {
+        db.close;
 
-    });
-    db.close;
+    }
+
 }
 
 export async function insertUsuarios(req, res) {
     let pessoa = req.body;
-    console.log(pessoa);
 
-    
+    let erros = await verificarCadastro(pessoa);
+    console.log(erros);
 
     try {
 
-        pessoa.senha = await criarHash(pessoa.senha);
-        await dbx.get('INSERT INTO usuario (registro, nome, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.registro, pessoa.nome, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
-        res.status(200).json({
-            "success": true,
-            "message": "Usuário cadastrado com Sucesso."
-        });
+
+        if (erros.length == 0) {
+            pessoa.senha = await criarHash(pessoa.senha);
+            await dbx.get('INSERT INTO usuario (registro, nome, email, senha, tipo_usuario) VALUES (?,?,?,?,?)', [pessoa.registro, pessoa.nome, pessoa.email, pessoa.senha, pessoa.tipo_usuario]);
+            res.status(200).json({
+                "success": true,
+                "message": "Usuário cadastrado com Sucesso."
+            });
+
+        } else {
+
+            res.status(403).json({
+                "success": false,
+                "message": erros
+            });
+        }
+
 
     } catch (error) {
 
-        res.status(400).json({
+        res.status(403).json({
             "success": false,
             "message": "Não foi possível cadastrar o usuário."
         });
@@ -109,35 +126,74 @@ export async function updateUsuarios(req, res) {
     console.log(" entrou no update ", pessoa);
     let db = new sqlite3.Database('./database.db');
 
-    if (!pessoa.registro) {
-        res.status(400).json({
-            "success": false,
-            "message": "Informe o Código do Usuário1111"
-        })
+    try {
+        const token = req.headers['authorization'].split(' ')[1];
 
-    } else if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (!pessoa.tipo_usuario === null)) {
-        res.status(400).json({
-            "success": false,
-            "message": "Informe o Todos os Campos null"
-        })
-
-    } else if ((pessoa.nome === "") || (pessoa.email === "") || (pessoa.senha === "") || (pessoa.registro === "") || (!pessoa.tipo_usuario === "")) {
-        console.log(pessoa);
-        res.status(400).json({
-            "success": false,
-            "message": "Informe o Todos os Campos vazio"
-        })
-
-    } else {
-        pessoa.senha = await criarHash(pessoa.senha);
-        console.log("chegou na sql");
-
-        db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro], function (err, row) {
-            res.status(200).json({
-                "success": true,
-                "message": "Cadastro Alterado com Sucesso"
+        if (!pessoa.registro) {
+            res.status(403).json({
+                "success": false,
+                "message": "Informe o Código do Usuário"
             })
+
+        } else if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (pessoa.tipo_usuario === null)) {
+            res.status(403).json({
+                "success": false,
+                "message": "Informe o Todos os Campos"
+            })
+
+        } else if ((pessoa.nome === "") || (pessoa.email === "") || (pessoa.senha === "") || (pessoa.registro === "") || (pessoa.tipo_usuario === "")) {
+            console.log(pessoa);
+            res.status(403).json({
+                "success": false,
+                "message": "Não Podem Existir Campos Vazios"
+            })
+        } else if ((pessoa.nome === " ") || (pessoa.email === " ") || (pessoa.senha === " ") || (pessoa.registro === " ") || (pessoa.tipo_usuario === " ")) {
+            console.log(pessoa);
+            res.status(403).json({
+                "success": false,
+                "message": "Não Podem Existir Campos Vazios"
+            })
+
+        } else {
+            pessoa.senha = await criarHash(pessoa.senha);
+            console.log("chegou na sql");
+
+            jwt.verify(token, SECRET, (err, decoded) => {
+                db.get('SELECT * FROM usuario WHERE registro=?', decoded.registro, function (err, row) {
+
+                    if (row.tipo_usuario === 1) {
+                        db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro], function (err, row) {
+                            res.status(200).json({
+                                "success": true,
+                                "message": "Cadastro Alterado com Sucesso"
+                            })
+                        });
+                    } else if ((pessoa.tipo_usuario === 1) && (row.tipo_usuario === 0)) {
+                        res.status(403).json({
+                            "success": true,
+                            "message": "Você Não Tem Autorização para Mudar Seu Status"
+                        })
+                    } else {
+                        db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.registro], function (err, row) {
+                            res.status(200).json({
+                                "success": true,
+                                "message": "Cadastro Alterado com Sucesso"
+                            })
+                        });
+
+                    }
+                });
+            });
+        }
+
+    } catch (error) {
+        res.status(403).json({
+            "success": false,
+            "message": "Erro no formato do cabeçalho!"
+
         });
+    } finally {
+        db.close;
 
     }
 }
@@ -146,18 +202,19 @@ export async function selectAllUser(req, res,) {
 
     let db = new sqlite3.Database('./database.db');
 
+
     try {
 
         db.all('SELECT nome,registro,email,tipo_usuario  FROM usuario', function (err, row) {
 
-            let usuarios = JSON.stringify({ usuarios: row, "success": true, "message": "Não precisava de retorno aqui!." });
+            let usuarios = JSON.stringify({ usuarios: row, "success": true, "message": "Lista de Usuários!." });
 
             res.status(200).json(JSON.parse(usuarios));
 
         });
 
     } catch (error) {
-        res.status(400).json({
+        res.status(403).json({
             "success": false,
             "message": "Não existem usuários cadastrados."
         });
@@ -186,14 +243,13 @@ export async function selectUser(req, res) {
 
                 let usuario = JSON.stringify({ "success": false, "message": "Usuário Não Localizado!." });
 
-                res.status(401).json(JSON.parse(usuario));
-
+                res.status(403).json(JSON.parse(usuario));
             }
 
         });
 
     } catch (error) {
-        res.status(400).json({
+        res.status(403).json({
             "success": false,
             "message": "Não existem usuários cadastrados."
         });
@@ -211,9 +267,9 @@ export async function deleteUsuarios(req, res) {
 
         if (!req.params.registro) {
 
-            res.status(400).json({
+            res.status(403).json({
                 "success": false,
-                "message": "Informe o Código do Usuário..."
+                "message": "Informe o REGISTRO do Usuário..."
             })
 
         } else {
@@ -229,7 +285,7 @@ export async function deleteUsuarios(req, res) {
 
     } catch (error) {
 
-        res.status(400).json({
+        res.status(403).json({
             "success": false,
             "message": "Usuário Inexistente..."
         })

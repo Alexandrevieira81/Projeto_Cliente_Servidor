@@ -197,6 +197,7 @@ export async function verificarCadastro(pessoa) {
   try {
     console.log("Verifica campos ", pessoa);
     let registro = String(pessoa.registro);
+   // registro= registro.trim();
     console.log(registro);
 
     if (pessoa.registro == "") {
@@ -208,11 +209,11 @@ export async function verificarCadastro(pessoa) {
 
 
     }
-    if ((registro.length) != 7) {
+   /*  if ((registro.length) != 7) {
       erros.push("O registro Precisa conter 7 números");
 
 
-    }
+    } */
     if ((pessoa.nome === null) || (pessoa.email === null) || (pessoa.senha === null) || (pessoa.registro === null) || (pessoa.tipo_usuario === null)) {
       erros.push("Informe o Todos os Campos");
 

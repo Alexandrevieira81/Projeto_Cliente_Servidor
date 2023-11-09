@@ -124,6 +124,7 @@ export async function insertUsuarios(req, res) {
 export async function updateUsuarios(req, res) {
     let pessoa = req.body;
     let erros = await verificarCadastro(pessoa);
+    console.log(req.params.registro);
     let db = new sqlite3.Database('./database.db');
 
     try {
@@ -133,7 +134,7 @@ export async function updateUsuarios(req, res) {
             
             pessoa.senha = await criarHash(pessoa.senha);
 
-            db.get('SELECT * FROM usuario WHERE registro=?', pessoa.registro, function (err, row) {
+            db.get('SELECT * FROM usuario WHERE registro=?', req.params.registro, function (err, row) {
 
                 if (row) {
 
@@ -144,7 +145,7 @@ export async function updateUsuarios(req, res) {
                         db.get('SELECT * FROM usuario WHERE registro=?', decoded.registro, function (err, row) {
 
                             if (row.tipo_usuario === 1) {
-                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, pessoa.registro], function (err, row) {
+                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, req.params.registro], function (err, row) {
                                     res.status(200).json({
                                         "success": true,
                                         "message": "Cadastro Alterado com Sucesso"
@@ -152,11 +153,11 @@ export async function updateUsuarios(req, res) {
                                 });
                             } else if ((pessoa.tipo_usuario === 1) && (row.tipo_usuario === 0)) {
                                 res.status(403).json({
-                                    "success": true,
+                                    "success": false,
                                     "message": "Você Não Tem Autorização para Mudar Seu Status"
                                 })
                             } else {
-                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, pessoa.registro, pessoa.email, pessoa.senha, pessoa.registro], function (err, row) {
+                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, req.params.registro], function (err, row) {
                                     res.status(200).json({
                                         "success": true,
                                         "message": "Cadastro Alterado com Sucesso"
@@ -236,7 +237,7 @@ export async function selectUser(req, res) {
 
             if (row) {
 
-                let usuario = JSON.stringify({ usuarios: row, "success": true, "message": "Usuário Encontrado!." });
+                let usuario = JSON.stringify({ usuario: row, "success": true, "message": "Usuário Encontrado!." });
 
                 //console.log(usuario);
 

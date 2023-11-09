@@ -18,7 +18,7 @@ router.post('/login', usuarioLogin);
 router.post('/usuarios', verificarADM, insertUsuarios);
 router.get('/usuarios', verificarADM, selectAllUser);
 router.get('/usuarios/:registro', verificarADM, selectUser);
-router.put('/usuarios', verificarADM, updateUsuarios);
+router.put('/usuarios/:registro', verificarADM, updateUsuarios);
 router.delete('/usuarios/:registro', verificarADM, deleteUsuarios);
 
 

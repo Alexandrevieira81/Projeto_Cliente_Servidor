@@ -5,6 +5,8 @@ import * as EmailValidator from 'email-validator';
 const SECRET = 'alexvieira';
 
 export async function verificarADM(req, res, next) {
+  console.log("entrou no verificar ADM "+ req.body);
+ 
 
   let db = new sqlite3.Database('./database.db');
   let registroaux = "";
@@ -96,11 +98,14 @@ export async function verificarADM(req, res, next) {
 };
 
 export async function verificarUSER(req, res, next) {
-  const token = req.headers['authorization'].split(' ')[1];
+  
   let db = new sqlite3.Database('./database.db');
-  console.log("Passou pelo verifica user");
-  console.log(token);
+  //console.log("Passou pelo verifica user");
+  
   try {
+
+    const token = req.headers['authorization'].split(' ')[1];
+    console.log(token);
     jwt.verify(token, SECRET, (err, decoded) => {
 
       if (err) {
@@ -139,11 +144,12 @@ export async function verificarUSER(req, res, next) {
 };
 
 export async function verificarUSERLogout(req, res, next) {
-  const token = req.headers['authorization'].split(' ')[1];
+  
   let db = new sqlite3.Database('./database.db');
-  console.log(token);
+  //console.log(token);
 
   try {
+    const token = req.headers['authorization'].split(' ')[1];
     jwt.verify(token, SECRET, (err, decoded) => {
       if (err) {
         res.status(401).json({

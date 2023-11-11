@@ -2,9 +2,10 @@ import express from 'express';
 import router from './router.js';
 import cors from 'cors';
 import { createTableUsuarios, createTableBlacklist } from './controller/Usuarios.js';
-import { createTableRota,createTableSegmento,createTableSegmentoRota} from './controller/Rotas.js';
-import {createTableSegmentos} from './controller/Segmentos.js';
-import {createTablePontos } from './controller/Pontos.js';
+import { createTableRota, createTableSegmento, createTableSegmentoRota } from './controller/Rotas.js';
+import { createTableSegmentos } from './controller/Segmentos.js';
+import { createTablePontos } from './controller/Pontos.js';
+import { Logados } from './controller/Logados.js';
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -16,6 +17,7 @@ createTableSegmento();
 createTableSegmentoRota();
 createTablePontos();
 createTableSegmentos();
+
 app.use(function (err, req, res, next) {
   console.error(err.stack);
   res.status(400).json({
@@ -24,4 +26,4 @@ app.use(function (err, req, res, next) {
   });
 });
 
-app.listen(22000, () => console.log("Funcionando"))
+app.listen(3000, () => console.log("Funcionando"))

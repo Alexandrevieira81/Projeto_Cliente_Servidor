@@ -1,7 +1,7 @@
 import { openDb } from "../configDB.js";
 import sqlite3 from 'sqlite3';
 import jwt from 'jsonwebtoken';
-import { criarHash, verificarCadastro } from "../funcoes.js";
+import { criarHash, verificarCadastro, logados } from "../funcoes.js";
 import bcrypt from 'bcrypt';
 const SECRET = 'alexvieira';
 const dbx = await openDb();
@@ -19,27 +19,49 @@ export async function createTableBlacklist() {
 }
 
 export async function usuarioLogout(req, res) {
-
+    let registro;
     try {
 
-        await dbx.run('INSERT INTO blacklist (token) VALUES (?)', [req.headers['authorization'].split(' ')[1]]);
 
-        res.status(200).json({
-            "success": true,
-            "message": "Deslogado com sucesso.",
+        const token = req.headers['authorization'].split(' ')[1];
+
+        jwt.verify(token, SECRET, (err, decoded) => {
+            registro = decoded.registro;
+
 
         });
+        if (logados.get(registro) === -1) {
+
+            res.status(403).json({
+                "success": false,
+                "message": "Problemas ao Deslogar Usuário não está Logado",
+
+            });
+
+        } else {
+
+            await dbx.run('INSERT INTO blacklist (token) VALUES (?)', [token]);
+
+            res.status(200).json({
+                "success": true,
+                "message": "Deslogado com sucesso.",
+
+            });
+
+            logados.delete(registro);
+            listarUsuarios();
+
+        }
 
     } catch (error) {
 
         res.status(403).json({
-            "success": true,
+            "success": false,
             "message": "Problemas ao Deslogar",
 
         });
 
     }
-
 
     return;
 }
@@ -49,41 +71,50 @@ export async function usuarioLogin(req, res) {
 
     let db = new sqlite3.Database('./database.db');
 
-    console.log(req.body.senha);
-    console.log(req.body.registro);
+
 
     try {
-        db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {
 
-            if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
-                console.log(row.registro);
-                const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 3000 });
-                res.status(200).json({
-                    "success": true,
-                    "message": "Login realizado com sucesso.",
-                    token
-                });
-            } else {
-                res.status(403).json({
-                    "success": false,
-                    "message": "Não foi possível realizar o Login Verifique suas credenciais."
-                });
+        if (logados.get(req.body.registro) === false) {
 
-            }
+            db.get('SELECT * FROM usuario WHERE registro=?', [req.body.registro], function (err, row) {
 
-        });
+                if ((row) && (bcrypt.compareSync(req.body.senha, row.senha))) {
+
+                    logados.add(row.registro);
+                    const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 3000 });
+                    res.status(200).json({
+                        "success": true,
+                        "message": "Login realizado com sucesso.",
+                        token
+                    });
+                    listarUsuarios();
+                } else {
+                    res.status(403).json({
+                        "success": false,
+                        "message": "Não foi possível realizar o Login Verifique suas credenciais."
+                    });
+                }
+            });
+
+        } else {
+            res.status(403).json({
+                "success": false,
+                "message": "Problemas ao Logar Usuário já está Logado",
+            });
+        }
+
     } catch (error) {
 
         res.status(403).json({
             "success": false,
-            "message": "Não foi possível realizar o Login Verifique suas credenciais."
+            "message": "Ocorreu uma exceção realizar o Login Verifique suas credenciais."
         });
 
     } finally {
         db.close;
 
     }
-
 }
 
 export async function insertUsuarios(req, res) {
@@ -122,85 +153,123 @@ export async function insertUsuarios(req, res) {
 }
 
 export async function updateUsuarios(req, res) {
-    let pessoa = req.body;
-    let erros = await verificarCadastro(pessoa);
-    console.log(req.params.registro);
+    let pessoa;
+    let erros;
     let db = new sqlite3.Database('./database.db');
 
     try {
-        const token = req.headers['authorization'].split(' ')[1];
+        pessoa = req.body;
+        erros = await verificarCadastro(pessoa);
+        pessoa.senha = await criarHash(pessoa.senha);
 
-        if (erros.length == 0) {
-            
-            pessoa.senha = await criarHash(pessoa.senha);
+        db.get('SELECT * FROM usuario WHERE registro=?', req.params.registro, function (err, row) {
 
-            db.get('SELECT * FROM usuario WHERE registro=?', req.params.registro, function (err, row) {
-
-                if (row) {
+            if (row) {
 
 
-                    console.log("chegou na sql");
-
-                    jwt.verify(token, SECRET, (err, decoded) => {
-                        db.get('SELECT * FROM usuario WHERE registro=?', decoded.registro, function (err, row) {
-
-                            if (row.tipo_usuario === 1) {
-                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, req.params.registro], function (err, row) {
-                                    res.status(200).json({
-                                        "success": true,
-                                        "message": "Cadastro Alterado com Sucesso"
-                                    })
-                                });
-                            } else if ((pessoa.tipo_usuario === 1) && (row.tipo_usuario === 0)) {
-                                res.status(403).json({
-                                    "success": false,
-                                    "message": "Você Não Tem Autorização para Mudar Seu Status"
-                                })
-                            } else {
-                                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, req.params.registro], function (err, row) {
-                                    res.status(200).json({
-                                        "success": true,
-                                        "message": "Cadastro Alterado com Sucesso"
-                                    })
-                                });
-
-                            }
-                        });
-                    });
+                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, req.params.registro], function (err, row) {
+                    res.status(200).json({
+                        "success": true,
+                        "message": "Cadastro Alterado com Sucesso"
+                    })
+                });
 
 
 
-                } else {
-                    res.status(403).json({
-                        "success": false,
-                        "message": "Informe um Registro Válido!"
+            } else {
+                res.status(403).json({
+                    "success": false,
+                    "message": "Informe um Registro Válido!"
+                });
+            }
 
-                    });
-
-                }
-
-
-            });
-
-        } else {
-            res.status(403).json({
-                "success": false,
-                "message": erros
-            });
-
-        }
+        });
 
     } catch (error) {
+
         res.status(403).json({
             "success": false,
             "message": "Erro no formato do cabeçalho!"
-
         });
+
     } finally {
         db.close;
-
     }
 }
+//FUNÇÃO PARA UPDATE COM DADOS COMPLETOS
+/*    try {
+       pessoa = req.body;
+       erros = await verificarCadastro(pessoa);
+       const token = req.headers['authorization'].split(' ')[1];
+
+       if (erros.length == 0) {
+
+           pessoa.senha = await criarHash(pessoa.senha);
+
+           db.get('SELECT * FROM usuario WHERE registro=?', req.params.registro, function (err, row) {
+
+               if (row) {
+
+                   jwt.verify(token, SECRET, (err, decoded) => {
+                       db.get('SELECT * FROM usuario WHERE registro=?', decoded.registro, function (err, row) {
+
+                           if (row.tipo_usuario === 1) {
+                               db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=?, tipo_usuario=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, pessoa.tipo_usuario, req.params.registro], function (err, row) {
+                                   res.status(200).json({
+                                       "success": true,
+                                       "message": "Cadastro Alterado com Sucesso"
+                                   })
+                               });
+                           } else if ((pessoa.tipo_usuario === 1) && (row.tipo_usuario === 0)) {
+                               res.status(403).json({
+                                   "success": false,
+                                   "message": "Você Não Tem Autorização para Mudar Seu Status"
+                               })
+                           } else {
+                               db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, req.params.registro], function (err, row) {
+                                   res.status(200).json({
+                                       "success": true,
+                                       "message": "Cadastro Alterado com Sucesso"
+                                   })
+                               });
+
+                           }
+                       });
+                   });
+
+
+
+               } else {
+                   res.status(403).json({
+                       "success": false,
+                       "message": "Informe um Registro Válido!"
+
+                   });
+
+               }
+
+
+           });
+
+       } else {
+           res.status(403).json({
+               "success": false,
+               "message": erros
+           });
+
+       }
+
+   } catch (error) {
+       res.status(403).json({
+           "success": false,
+           "message": "Erro no formato do cabeçalho!"
+
+       });
+   } finally {
+       db.close;
+
+   }
+} */
 
 export async function selectAllUser(req, res,) {
 
@@ -299,4 +368,23 @@ export async function deleteUsuarios(req, res) {
         db.close;
     }
 
+}
+async function listarUsuarios() {
+    let db = new sqlite3.Database('./database.db');
+    let log = logados.islogged();
+    console.log("Usuários Logados")
+    for (let i = 0; i < log.length; i++) {
+
+        db.get('SELECT * FROM usuario WHERE registro=?', log[i], function (err, row) {
+
+
+            console.log(row.registro);
+            console.log(row.nome);
+            console.log("___________________________________________")
+
+
+        });
+
+    }
+    db.close;
 }

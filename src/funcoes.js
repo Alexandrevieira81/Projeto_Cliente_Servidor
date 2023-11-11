@@ -1,9 +1,11 @@
 import jwt from 'jsonwebtoken';
 import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
+import { Logados } from './controller/Logados.js';
 import * as EmailValidator from 'email-validator';
 const SECRET = 'alexvieira';
 
+export let logados = new Logados();
 export async function verificarADM(req, res, next) {
   console.log("entrou no verificar ADM "+ req.body);
  
@@ -159,7 +161,7 @@ export async function verificarUSERLogout(req, res, next) {
 
       } else {
         db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
-          console.log(row);
+         
           if (row) {
 
             res.status(401).json({

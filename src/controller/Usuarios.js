@@ -30,6 +30,7 @@ export async function usuarioLogout(req, res) {
 
 
         });
+        console.log("Usuário " + registro + " Está tentado deslogar utilizando o token " + token);
         if (logados.get(registro) === -1) {
 
             res.status(403).json({
@@ -71,9 +72,9 @@ export async function usuarioLogin(req, res) {
 
     let db = new sqlite3.Database('./database.db');
 
-
-
     try {
+        let log = JSON.stringify(req.body);
+        console.log("Login " + log);
 
         if (logados.get(req.body.registro) === false) {
 
@@ -84,6 +85,7 @@ export async function usuarioLogin(req, res) {
                     logados.add(row.registro);
                     const token = jwt.sign({ registro: row.registro }, SECRET, { expiresIn: 3000 });
                     res.status(200).json({
+                        "registro": row.registro,
                         "success": true,
                         "message": "Login realizado com sucesso.",
                         token
@@ -118,13 +120,15 @@ export async function usuarioLogin(req, res) {
 }
 
 export async function insertUsuarios(req, res) {
-    let pessoa = req.body;
-
-    let erros = await verificarCadastro(pessoa);
-    console.log(erros);
+    let pessoa;
+    let erros;
 
     try {
 
+        pessoa = req.body;
+        erros = await verificarCadastro(pessoa);
+        console.log(erros);
+        console.log("Inserção de usuários DADOS " + JSON.stringify(req.body));
 
         if (erros.length == 0) {
             pessoa.senha = await criarHash(pessoa.senha);
@@ -154,36 +158,48 @@ export async function insertUsuarios(req, res) {
 
 export async function updateUsuarios(req, res) {
     let pessoa;
-    let erros;
+   // let erros;
     let db = new sqlite3.Database('./database.db');
 
     try {
+
         pessoa = req.body;
-        erros = await verificarCadastro(pessoa);
-        pessoa.senha = await criarHash(pessoa.senha);
+        //erros = await verificarCadastro(pessoa);
+        //console.log(erros);
+        console.log("Atualização de usuários DADOS " + JSON.stringify(req.body));
 
-        db.get('SELECT * FROM usuario WHERE registro=?', req.params.registro, function (err, row) {
+       // if (erros.length == 0) {
+            pessoa.senha = await criarHash(pessoa.senha);
+            db.get('SELECT * FROM usuario WHERE registro=?', req.params.registro, function (err, row) {
 
-            if (row) {
-
-
-                db.get('UPDATE usuario SET nome=?, registro=?, email=?, senha=? WHERE registro=?', [pessoa.nome, req.params.registro, pessoa.email, pessoa.senha, req.params.registro], function (err, row) {
-                    res.status(200).json({
-                        "success": true,
-                        "message": "Cadastro Alterado com Sucesso"
-                    })
-                });
+                if (row) {
 
 
+                    db.get('UPDATE usuario SET nome=?,email=?, senha=? WHERE registro=?', [pessoa.nome, pessoa.email, pessoa.senha, req.params.registro], function (err, row) {
+                        res.status(200).json({
+                            "success": true,
+                            "message": "Cadastro Alterado com Sucesso"
+                        })
+                    });
 
-            } else {
-                res.status(403).json({
-                    "success": false,
-                    "message": "Informe um Registro Válido!"
-                });
-            }
 
-        });
+
+                } else {
+                    res.status(403).json({
+                        "success": false,
+                        "message": "Informe um Registro Válido!"
+                    });
+                }
+
+            });
+
+        //} else {
+         //   res.status(403).json({
+         //       "success": false,
+          //      "message": erros
+        //    });
+
+       // }
 
     } catch (error) {
 
@@ -277,6 +293,7 @@ export async function selectAllUser(req, res,) {
 
 
     try {
+        //console.log(" Solicitação de Lista de Usuários " + JSON.stringify(req.headers));
 
         db.all('SELECT nome,registro,email,tipo_usuario  FROM usuario', function (err, row) {
 
@@ -301,6 +318,7 @@ export async function selectUser(req, res) {
     let db = new sqlite3.Database('./database.db');
 
     try {
+        //console.log(" Solicitação dos dados de Usuário " + JSON.stringify(req.headers));
 
         db.get('SELECT nome,registro,email,tipo_usuario  FROM usuario where registro=?', [req.params.registro], function (err, row) {
 
@@ -335,8 +353,9 @@ export async function selectUser(req, res) {
 export async function deleteUsuarios(req, res) {
 
     let db = new sqlite3.Database('./database.db');
-    console.log("DELETAR USUÁRIO ", req.params.registro)
+    
     try {
+        console.log("DELETAR O USUÁRIO ", req.params.registro)
 
         if (!req.params.registro) {
 
@@ -371,20 +390,30 @@ export async function deleteUsuarios(req, res) {
 }
 async function listarUsuarios() {
     let db = new sqlite3.Database('./database.db');
-    let log = logados.islogged();
-    console.log("Usuários Logados")
-    for (let i = 0; i < log.length; i++) {
 
-        db.get('SELECT * FROM usuario WHERE registro=?', log[i], function (err, row) {
+    try {
+        let log = logados.islogged();
+        console.log("Usuários Logados")
+        for (let i = 0; i < log.length; i++) {
 
-
-            console.log(row.registro);
-            console.log(row.nome);
-            console.log("___________________________________________")
+            db.get('SELECT * FROM usuario WHERE registro=?', log[i], function (err, row) {
 
 
-        });
+                console.log(row.registro);
+                console.log(row.nome);
+                console.log("___________________________________________")
 
+
+            });
+
+        }
+
+    } catch (error) {
+
+        console.log("Ocorreu um problema com a lista de usuários logados")
+    } finally {
+        db.close;
     }
-    db.close;
+
+
 }

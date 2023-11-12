@@ -7,7 +7,7 @@ const SECRET = 'alexvieira';
 
 export let logados = new Logados();
 export async function verificarADM(req, res, next) {
-  console.log("entrou no verificar ADM "+ req.body);
+  //console.log("entrou no verificar ADM "+ req.body);
  
 
   let db = new sqlite3.Database('./database.db');
@@ -37,7 +37,7 @@ export async function verificarADM(req, res, next) {
         db.get('SELECT * FROM blacklist WHERE token=?', [token], function (err, row) {
 
           if (row) {
-            db.close;
+            //db.close;
             res.status(401).json({
               "success": false,
               "message": 'Acesso Expirado, Favor Realizar o Login Novamente!'
@@ -193,7 +193,7 @@ export async function criarHash(senha) {
   const saltRounds = 6;
   const salt = bcrypt.genSaltSync(saltRounds);
   const result = await bcrypt.hash(senha, salt);
-  console.log(result)
+  //console.log(result)
   return result;
 
 }
